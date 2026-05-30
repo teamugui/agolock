@@ -71,28 +71,28 @@
 
     <select id="findById" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE id = #{id}
     </select>
 
     <select id="findByExternalId" parameterType="java.util.UUID" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE external_id = #{externalId}
     </select>
 
     <select id="findByBoxId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE box_id = #{boxId}
     </select>
 
     <select id="findByShelfIdDirectOnly" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE shelf_id = #{shelfId}
           AND box_id IS NULL
@@ -100,7 +100,7 @@
 
     <select id="findBySpaceIdDirectOnly" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
           AND shelf_id IS NULL
@@ -108,7 +108,7 @@
 
     <select id="findByItemId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE item_id = #{itemId}
     </select>
@@ -128,14 +128,14 @@
 
     <select id="findBySpaceId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
     </select>
 
     <select id="findInStockByItemAndBox" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE item_id = #{itemId}
           AND box_id  = #{boxId}
@@ -145,7 +145,7 @@
 
     <select id="findInStockByItemAndShelf" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
           AND shelf_id = #{shelfId}
@@ -156,7 +156,7 @@
 
     <select id="findInStockByItemAndSpace" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, memo, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, is_kept, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
           AND space_id = #{spaceId}

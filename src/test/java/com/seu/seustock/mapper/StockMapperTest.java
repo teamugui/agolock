@@ -162,6 +162,26 @@ class StockMapperTest {
     }
 
     @Test
+    void updateIsKept_togglesKeepFlagBothDirections() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        // 기본값은 보관 해제 상태
+        assertThat(stockMapper.findByExternalId(externalId).orElseThrow().isKept()).isFalse();
+
+        // 보관 설정 — findByExternalId가 is_kept를 실제로 반영해야 한다
+        int set = stockMapper.updateIsKept(externalId, userId, true);
+        assertThat(set).isEqualTo(1);
+        assertThat(stockMapper.findByExternalId(externalId).orElseThrow().isKept()).isTrue();
+
+        // 보관 해제 — 서비스의 멱등 가드(stock.isKept() == kept)가 올바른 값으로 비교돼야 한다
+        int unset = stockMapper.updateIsKept(externalId, userId, false);
+        assertThat(unset).isEqualTo(1);
+        assertThat(stockMapper.findByExternalId(externalId).orElseThrow().isKept()).isFalse();
+    }
+
+    @Test
     void findByItemId() {
         stockMapper.insertStock(buildStock());
         stockMapper.insertStock(buildStock());
