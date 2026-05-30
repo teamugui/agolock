@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -325,6 +326,93 @@ class StockServiceTest {
         ArgumentCaptor<StockTransactionDTO> txCaptor = ArgumentCaptor.forClass(StockTransactionDTO.class);
         verify(transactionMapper).insertTransaction(txCaptor.capture());
         assertThat(txCaptor.getValue().getTransactionType()).isEqualTo(TransactionType.OUT);
+    }
+
+    @Test
+    void changeStatus_rejectsInStockSelection() {
+        assertThatThrownBy(() -> stockService.changeStatus(STOCK_EXTERNAL_ID, StockStatus.IN_STOCK, null, USERNAME))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(stockMapper, never()).updateStatusAndMemoIfInStock(any(), any(), any(), any());
+        verify(transactionMapper, never()).insertTransaction(any());
+    }
+
+    @Test
+    void changeStatus_rejectsItemOwnedByAnotherUser() {
+        StockDTO stock = stock(700L);
+        stock.setItemId(otherUserItem.getId());
+        when(stockMapper.findByExternalId(STOCK_EXTERNAL_ID)).thenReturn(Optional.of(stock));
+        when(itemMapper.findById(otherUserItem.getId())).thenReturn(Optional.of(otherUserItem));
+
+        assertThatThrownBy(() -> stockService.changeStatus(STOCK_EXTERNAL_ID, StockStatus.DAMAGED, null, USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(stockMapper, never()).updateStatusAndMemoIfInStock(any(), any(), any(), any());
+        verify(transactionMapper, never()).insertTransaction(any());
+    }
+
+    @Test
+    void changeStatus_rejectsWhenNotInStock() {
+        StockDTO stock = stock(700L);
+        stock.setItemId(item.getId());
+        stock.setMemo("기존 메모");
+        when(stockMapper.findByExternalId(STOCK_EXTERNAL_ID)).thenReturn(Optional.of(stock));
+        when(itemMapper.findById(item.getId())).thenReturn(Optional.of(item));
+        when(stockMapper.updateStatusAndMemoIfInStock(eq(STOCK_EXTERNAL_ID), eq(user.getId()),
+                eq(StockStatus.LOST), anyString())).thenReturn(0);
+
+        assertThatThrownBy(() -> stockService.changeStatus(STOCK_EXTERNAL_ID, StockStatus.LOST, "분실 추정", USERNAME))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verify(transactionMapper, never()).insertTransaction(any());
+    }
+
+    @Test
+    void changeStatus_appendsMemoAndRecordsAdjustTransaction() {
+        StockDTO stock = stock(700L);
+        stock.setItemId(item.getId());
+        stock.setMemo("기존 메모");
+        when(stockMapper.findByExternalId(STOCK_EXTERNAL_ID)).thenReturn(Optional.of(stock));
+        when(itemMapper.findById(item.getId())).thenReturn(Optional.of(item));
+        when(stockMapper.updateStatusAndMemoIfInStock(eq(STOCK_EXTERNAL_ID), eq(user.getId()),
+                eq(StockStatus.DAMAGED), anyString())).thenReturn(1);
+
+        stockService.changeStatus(STOCK_EXTERNAL_ID, StockStatus.DAMAGED, "파손 확인", USERNAME);
+
+        String today = java.time.LocalDate.now().toString();
+        ArgumentCaptor<String> memoCaptor = ArgumentCaptor.forClass(String.class);
+        verify(stockMapper).updateStatusAndMemoIfInStock(eq(STOCK_EXTERNAL_ID), eq(user.getId()),
+                eq(StockStatus.DAMAGED), memoCaptor.capture());
+        assertThat(memoCaptor.getValue()).isEqualTo("기존 메모\n[" + today + "] 파손 확인");
+
+        ArgumentCaptor<StockTransactionDTO> txCaptor = ArgumentCaptor.forClass(StockTransactionDTO.class);
+        verify(transactionMapper).insertTransaction(txCaptor.capture());
+        assertThat(txCaptor.getValue().getTransactionType()).isEqualTo(TransactionType.ADJUST);
+        assertThat(txCaptor.getValue().getStockId()).isEqualTo(700L);
+        assertThat(txCaptor.getValue().getMemo()).isEqualTo("파손 확인");
+    }
+
+    @Test
+    void changeStatus_dispatchedUsesOutTransactionAndKeepsMemoWhenReasonBlank() {
+        StockDTO stock = stock(700L);
+        stock.setItemId(item.getId());
+        stock.setMemo("기존 메모");
+        when(stockMapper.findByExternalId(STOCK_EXTERNAL_ID)).thenReturn(Optional.of(stock));
+        when(itemMapper.findById(item.getId())).thenReturn(Optional.of(item));
+        when(stockMapper.updateStatusAndMemoIfInStock(eq(STOCK_EXTERNAL_ID), eq(user.getId()),
+                eq(StockStatus.DISPATCHED), anyString())).thenReturn(1);
+
+        stockService.changeStatus(STOCK_EXTERNAL_ID, StockStatus.DISPATCHED, "   ", USERNAME);
+
+        ArgumentCaptor<String> memoCaptor = ArgumentCaptor.forClass(String.class);
+        verify(stockMapper).updateStatusAndMemoIfInStock(eq(STOCK_EXTERNAL_ID), eq(user.getId()),
+                eq(StockStatus.DISPATCHED), memoCaptor.capture());
+        assertThat(memoCaptor.getValue()).isEqualTo("기존 메모");
+
+        ArgumentCaptor<StockTransactionDTO> txCaptor = ArgumentCaptor.forClass(StockTransactionDTO.class);
+        verify(transactionMapper).insertTransaction(txCaptor.capture());
+        assertThat(txCaptor.getValue().getTransactionType()).isEqualTo(TransactionType.OUT);
+        assertThat(txCaptor.getValue().getMemo()).isEqualTo(StockStatus.DISPATCHED.getLabel());
     }
 
     @Test

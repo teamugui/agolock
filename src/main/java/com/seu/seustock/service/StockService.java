@@ -19,6 +19,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -383,6 +384,48 @@ public class StockService {
                 user.getId(), stockExternalId, kept);
         return stockMapper.findDetailByExternalId(stockExternalId, user.getId())
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
+    }
+
+    @Transactional
+    public void changeStatus(UUID stockExternalId, StockStatus status, String memo, String username) {
+        UserDTO user = getUser(username);
+        if (status == null || status == StockStatus.IN_STOCK) {
+            throw new IllegalArgumentException(getMsg("error.stock.invalidStatus"));
+        }
+        StockDTO stock = stockMapper.findByExternalId(stockExternalId)
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
+
+        ItemDTO item = itemMapper.findById(stock.getItemId())
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.item.notFound")));
+        verifyItemOwner(item, user);
+
+        String newMemo = appendMemo(stock.getMemo(), memo);
+        int updated = stockMapper.updateStatusAndMemoIfInStock(stockExternalId, user.getId(), status, newMemo);
+        if (updated != 1) {
+            log.warn("stock status change rejected userId={} stockExternalId={} reason=not_in_stock",
+                    user.getId(), stockExternalId);
+            throw new NoSuchElementException(getMsg("error.stock.notFound"));
+        }
+
+        StockTransactionDTO tx = new StockTransactionDTO();
+        tx.setStockId(stock.getId());
+        tx.setTransactionType(status == StockStatus.DISPATCHED ? TransactionType.OUT : TransactionType.ADJUST);
+        tx.setMemo((memo != null && !memo.isBlank()) ? memo.strip() : status.getLabel());
+        transactionMapper.insertTransaction(tx);
+
+        log.info("stock status changed userId={} stockExternalId={} status={}",
+                user.getId(), stockExternalId, status);
+    }
+
+    private String appendMemo(String existing, String reason) {
+        if (reason == null || reason.isBlank()) {
+            return existing;
+        }
+        String line = "[" + LocalDate.now() + "] " + reason.strip();
+        if (existing == null || existing.isBlank()) {
+            return line;
+        }
+        return existing + "\n" + line;
     }
 
     @Transactional
