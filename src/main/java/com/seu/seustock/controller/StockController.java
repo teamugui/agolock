@@ -3,6 +3,7 @@ package com.seu.seustock.controller;
 import com.seu.seustock.configuration.HtmxResponse;
 import com.seu.seustock.model.dto.StockDetailDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
+import com.seu.seustock.model.enumeration.StockStatus;
 import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
@@ -28,6 +29,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -129,6 +131,29 @@ public class StockController {
         model.addAttribute("stock", stock);
         HtmxResponse.success(response, getMsg(kept ? "toast.stock.kept" : "toast.stock.unkept"));
         return "stocks/fragments/detail-row :: view";
+    }
+
+    @GetMapping("/stocks/{stockExternalId}/status")
+    public String statusModal(@PathVariable UUID stockExternalId,
+                              Principal principal, Model model) {
+        String username = principal.getName();
+        model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
+        model.addAttribute("statuses", Arrays.stream(StockStatus.values())
+                .filter(s -> s != StockStatus.IN_STOCK)
+                .toList());
+        return "stocks/fragments/status-modal :: modal";
+    }
+
+    @PutMapping("/stocks/{stockExternalId}/status")
+    public String changeStatus(@PathVariable UUID stockExternalId,
+                               @RequestParam StockStatus status,
+                               @RequestParam(required = false) String memo,
+                               Principal principal,
+                               HttpServletResponse response) {
+        String username = principal.getName();
+        stockService.changeStatus(stockExternalId, status, memo, username);
+        HtmxResponse.success(response, getMsg("toast.stock.statusChanged"));
+        return "stocks/fragments/status-modal :: removed";
     }
 
     @GetMapping("/stocks/{stockExternalId}/memo")
