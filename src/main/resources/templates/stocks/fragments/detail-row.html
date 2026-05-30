@@ -39,8 +39,11 @@
     </div>
 
     <div class="text-sm">
-        <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700"
-              th:text="#{${'enum.StockStatus.' + stock.status.name()}}">재고중</span>
+        <button type="button"
+                th:attr="hx-get=@{/stocks/{id}/status(id=${stock.externalId})}"
+                hx-target="#modal"
+                class="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 cursor-pointer transition"
+                th:text="#{${'enum.StockStatus.' + stock.status.name()}}">재고중</button>
         <span th:if="${stock.kept}"
               class="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ml-1"
               th:text="#{stock.badge.kept}">보관</span>
