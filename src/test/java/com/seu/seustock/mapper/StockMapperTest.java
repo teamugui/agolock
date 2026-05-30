@@ -182,6 +182,57 @@ class StockMapperTest {
     }
 
     @Test
+    void updateStatusAndMemoIfInStock_updatesWhenInStock() {
+        StockDTO stock = buildStock();
+        stock.setMemo("기존 메모");
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int updated = stockMapper.updateStatusAndMemoIfInStock(
+                externalId, userId, StockStatus.DAMAGED, "기존 메모\n[2026-05-30] 파손 확인");
+
+        assertThat(updated).isEqualTo(1);
+        StockDTO found = stockMapper.findById(stock.getId()).orElseThrow();
+        assertThat(found.getStatus()).isEqualTo(StockStatus.DAMAGED);
+        assertThat(found.getMemo()).isEqualTo("기존 메모\n[2026-05-30] 파손 확인");
+    }
+
+    @Test
+    void updateStatusAndMemoIfInStock_skipsWhenNotInStock() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DISPATCHED);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int updated = stockMapper.updateStatusAndMemoIfInStock(externalId, userId, StockStatus.LOST, "x");
+
+        assertThat(updated).isZero();
+        assertThat(stockMapper.findById(stock.getId()).orElseThrow().getStatus())
+                .isEqualTo(StockStatus.DISPATCHED);
+    }
+
+    @Test
+    void updateStatusAndMemoIfInStock_rejectsOtherUserUnit() {
+        UserDTO otherUser = new UserDTO();
+        otherUser.setEmail("otheruser2@test.com");
+        otherUser.setNickname("otheruser2");
+        otherUser.setPassword("password");
+        userMapper.insertUser(otherUser);
+        ItemDTO otherItem = new ItemDTO();
+        otherItem.setUserId(otherUser.getId());
+        otherItem.setName("다른 사용자 품목");
+        itemMapper.insertItem(otherItem);
+        StockDTO stock = buildStock();
+        stock.setItemId(otherItem.getId());
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int updated = stockMapper.updateStatusAndMemoIfInStock(externalId, userId, StockStatus.LOST, "x");
+
+        assertThat(updated).isZero();
+    }
+
+    @Test
     void findByItemId() {
         stockMapper.insertStock(buildStock());
         stockMapper.insertStock(buildStock());

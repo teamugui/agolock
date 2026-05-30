@@ -212,6 +212,19 @@
           )
     </update>
 
+    <update id="updateStatusAndMemoIfInStock">
+        UPDATE stocks
+        SET status = #{status},
+            memo   = #{memo}
+        WHERE external_id = #{externalId}
+          AND status = 'IN_STOCK'
+          AND item_id IN (
+              SELECT id
+              FROM items
+              WHERE user_id = #{userId}
+          )
+    </update>
+
     <update id="updateStatusIfInStock">
         UPDATE stocks
         SET status = #{status}

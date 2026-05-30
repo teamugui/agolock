@@ -56,6 +56,11 @@ public interface StockMapper {
                      @Param("userId") Long userId,
                      @Param("kept") boolean kept);
 
+    int updateStatusAndMemoIfInStock(@Param("externalId") UUID externalId,
+                                     @Param("userId") Long userId,
+                                     @Param("status") StockStatus status,
+                                     @Param("memo") String memo);
+
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByBoxIdPaged(@Param("boxId") Long boxId,
                                               @Param("limit") int limit,
