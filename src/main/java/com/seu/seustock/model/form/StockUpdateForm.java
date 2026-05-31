@@ -1,9 +1,12 @@
 package com.seu.seustock.model.form;
 
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -17,6 +20,10 @@ public class StockUpdateForm {
     private String lotNumber;
 
     private LocalDate expirationDate;
+
+    @PositiveOrZero(message = "{valid.price.positive}")
+    @Digits(integer = 12, fraction = 0, message = "{valid.price.digits}")
+    private BigDecimal price;
 
     private String memo;
 }

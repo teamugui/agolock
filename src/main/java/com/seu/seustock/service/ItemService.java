@@ -73,6 +73,7 @@ public class ItemService {
         item.setUserId(user.getId());
         item.setName(form.getName());
         item.setDescription(form.getDescription());
+        item.setPrice(form.getPrice());
         itemMapper.insertItem(item);
         attachPrimaryImageIfPresent(item.getId(), user, form);
         log.info("item created userId={} itemId={}", user.getId(), item.getId());
@@ -85,6 +86,7 @@ public class ItemService {
         verifyOwner(item, username);
         item.setName(form.getName());
         item.setDescription(form.getDescription());
+        item.setPrice(form.getPrice());
         itemMapper.updateItem(item);
         attachPrimaryImageIfPresent(item.getId(), getUser(username), form);
         log.info("item updated userId={} itemId={}", getUser(username).getId(), item.getId());

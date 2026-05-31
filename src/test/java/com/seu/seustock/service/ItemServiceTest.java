@@ -18,12 +18,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -224,6 +226,48 @@ class ItemServiceTest {
         itemService.create(USERNAME, form);
 
         verify(itemImageMapper).insertItemImage(any(), eq(20L), eq(0), eq(true));
+    }
+
+    @Test
+    void create_setsPriceOnInsertedItem() {
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
+        when(imageStorageService.store(null, user, null)).thenReturn(null);
+        when(itemMapper.findById(any())).thenReturn(Optional.of(new ItemDTO()));
+
+        ItemForm form = new ItemForm();
+        form.setName("가격 품목");
+        form.setPrice(new BigDecimal("12000"));
+
+        itemService.create(USERNAME, form);
+
+        var captor = forClass(ItemDTO.class);
+        verify(itemMapper).insertItem(captor.capture());
+        assertThat(captor.getValue().getPrice()).isEqualByComparingTo("12000");
+    }
+
+    @Test
+    void update_setsPriceOnItem() {
+        ItemDTO item = new ItemDTO();
+        item.setId(10L);
+        item.setExternalId(ITEM_EXTERNAL_ID);
+        item.setUserId(1L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
+        when(imageStorageService.store(null, user, null)).thenReturn(null);
+
+        ItemForm form = new ItemForm();
+        form.setName("수정품목");
+        form.setPrice(new BigDecimal("15000"));
+
+        itemService.update(ITEM_EXTERNAL_ID, form, USERNAME);
+
+        var captor = forClass(ItemDTO.class);
+        verify(itemMapper).updateItem(captor.capture());
+        assertThat(captor.getValue().getPrice()).isEqualByComparingTo("15000");
     }
 
     // ── findByExternalId ──────────────────────────────────────────────────────

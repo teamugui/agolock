@@ -19,6 +19,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -660,5 +661,55 @@ class StockMapperTest {
         assertThat(found.getSerialNumber()).isEqualTo("SN-UPDATED");
         assertThat(found.getLotNumber()).isEqualTo("LOT-A");
         assertThat(found.getMemo()).isEqualTo("상태 확인 완료");
+    }
+
+    @Test
+    void insertStock_persistsPrice() {
+        StockDTO stock = buildStock();
+        stock.setPrice(new BigDecimal("5000"));
+        stockMapper.insertStock(stock);
+
+        assertThat(stockMapper.findById(stock.getId()).orElseThrow().getPrice())
+                .isEqualByComparingTo("5000");
+    }
+
+    @Test
+    void insertStocks_batchInsert_persistsPrice() {
+        StockDTO a = buildStock();
+        a.setPrice(new BigDecimal("3000"));
+        StockDTO b = buildStock();
+        b.setPrice(new BigDecimal("3000"));
+        stockMapper.insertStocks(List.of(a, b));
+
+        assertThat(stockMapper.findById(a.getId()).orElseThrow().getPrice()).isEqualByComparingTo("3000");
+        assertThat(stockMapper.findById(b.getId()).orElseThrow().getPrice()).isEqualByComparingTo("3000");
+    }
+
+    @Test
+    void updateDetails_updatesPrice() {
+        StockDTO stock = buildStock();
+        stock.setPrice(new BigDecimal("5000"));
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+        StockUpdateForm form = new StockUpdateForm();
+        form.setPrice(new BigDecimal("7000"));
+
+        int updated = stockMapper.updateDetails(externalId, userId, form);
+
+        assertThat(updated).isEqualTo(1);
+        assertThat(stockMapper.findById(stock.getId()).orElseThrow().getPrice())
+                .isEqualByComparingTo("7000");
+    }
+
+    @Test
+    void searchDetails_returnsPrice() {
+        StockDTO stock = buildStock();
+        stock.setPrice(new BigDecimal("5000"));
+        stockMapper.insertStock(stock);
+
+        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null, 10, 0);
+
+        assertThat(details).hasSize(1);
+        assertThat(details.get(0).getPrice()).isEqualByComparingTo("5000");
     }
 }

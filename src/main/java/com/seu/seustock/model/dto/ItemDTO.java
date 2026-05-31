@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -16,6 +17,7 @@ public class ItemDTO {
     private Long userId;
     private String name;
     private String description;
+    private BigDecimal price;
     private boolean active;
     private UUID primaryImageExternalId;
     private LocalDateTime createdAt;

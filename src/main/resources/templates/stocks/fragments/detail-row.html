@@ -36,6 +36,10 @@
             <span class="text-xs text-slate-400">LOT</span>
             <span th:text="${stock.lotNumber != null and !stock.lotNumber.isEmpty()} ? ${stock.lotNumber} : '-'"></span>
         </p>
+        <p class="mt-0.5" th:if="${stock.price != null}">
+            <span class="text-xs text-slate-400" th:text="#{view.stock.form.price.label}">가격</span>
+            <span th:text="#{view.common.price.format(${#numbers.formatInteger(stock.price, 1, 'COMMA')})}">5,000원</span>
+        </p>
     </div>
 
     <div class="text-sm">
@@ -142,6 +146,13 @@
             <input type="text" th:field="*{lotNumber}"
                    class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <p th:if="${#fields.hasErrors('lotNumber')}" th:errors="*{lotNumber}"
+               class="mt-1 text-xs text-red-500"></p>
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-500" th:text="#{view.stock.form.price.label}">가격</label>
+            <input type="number" min="0" step="1" th:field="*{price}"
+                   class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <p th:if="${#fields.hasErrors('price')}" th:errors="*{price}"
                class="mt-1 text-xs text-red-500"></p>
         </div>
     </div>

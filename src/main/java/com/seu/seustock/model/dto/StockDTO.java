@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,5 +26,6 @@ public class StockDTO {
     private String memo;
     private StockStatus status;
     private boolean kept;
+    private BigDecimal price;
     private LocalDateTime createdAt;
 }

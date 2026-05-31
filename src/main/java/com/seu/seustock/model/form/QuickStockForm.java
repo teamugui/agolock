@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -25,6 +26,10 @@ public class QuickStockForm {
     @Min(value = 1, message = "{valid.quickStock.count.min}") 
     @Max(value = 50, message = "{valid.quickStock.count.max}")
     private int count = 1;
+
+    @PositiveOrZero(message = "{valid.price.positive}")
+    @Digits(integer = 12, fraction = 0, message = "{valid.price.digits}")
+    private BigDecimal price;
 
     private String memo;
 

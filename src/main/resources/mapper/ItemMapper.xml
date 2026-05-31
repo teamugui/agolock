@@ -10,6 +10,7 @@
         <result property="userId"      column="user_id"/>
         <result property="name"        column="name"/>
         <result property="description" column="description"/>
+        <result property="price"       column="price"/>
         <result property="active"      column="active"/>
         <result property="primaryImageExternalId" column="primary_image_external_id"/>
         <result property="createdAt"   column="created_at"/>
@@ -19,12 +20,12 @@
 
     <insert id="insertItem" parameterType="ItemDTO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO items (user_id, name, description)
-        VALUES (#{userId}, #{name}, #{description})
+        INSERT INTO items (user_id, name, description, price)
+        VALUES (#{userId}, #{name}, #{description}, #{price})
     </insert>
 
     <select id="findById" parameterType="long" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.price, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -46,7 +47,7 @@
     </select>
 
     <select id="findByExternalId" parameterType="java.util.UUID" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.price, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -68,7 +69,7 @@
     </select>
 
     <select id="findByUserId" parameterType="long" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.price, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -91,7 +92,7 @@
     </select>
 
     <select id="findByUserIdWithOptions" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.price, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -142,7 +143,8 @@
     <update id="updateItem" parameterType="ItemDTO">
         UPDATE items
         SET name        = #{name},
-            description = #{description}
+            description = #{description},
+            price       = #{price}
         WHERE id = #{id}
     </update>
 

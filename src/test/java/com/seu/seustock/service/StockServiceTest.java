@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -275,6 +276,50 @@ class StockServiceTest {
 
         verify(stockMapper).insertStocks(anyList());
         verify(transactionMapper).insertTransactions(anyList());
+    }
+
+    @Test
+    void create_copiesItemPriceWhenFormPriceNull() {
+        item.setPrice(new BigDecimal("5000"));
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+
+        stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(captor.capture());
+        assertThat(captor.getValue().get(0).getPrice()).isEqualByComparingTo("5000");
+    }
+
+    @Test
+    void create_usesFormPriceOverItemPrice() {
+        item.setPrice(new BigDecimal("5000"));
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+
+        StockForm form = stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null);
+        form.setPrice(new BigDecimal("8000"));
+        stockService.create(form, USERNAME);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(captor.capture());
+        assertThat(captor.getValue().get(0).getPrice()).isEqualByComparingTo("8000");
+    }
+
+    @Test
+    void addUnits_copiesItemPriceWhenFormPriceNull() {
+        item.setPrice(new BigDecimal("5000"));
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+
+        stockService.addUnits(stockInOutForm(SPACE_EXTERNAL_ID, null, null), USERNAME);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(captor.capture());
+        assertThat(captor.getValue().get(0).getPrice()).isEqualByComparingTo("5000");
     }
 
     @Test
@@ -628,6 +673,30 @@ class StockServiceTest {
         verify(stockMapper).insertStocks(stockCaptor.capture());
         assertThat(stockCaptor.getValue()).hasSize(2);
         verify(transactionMapper).insertTransactions(any());
+    }
+
+    @Test
+    void createWithNewItem_setsPriceOnItemAndUnits() {
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(imageStorageService.store(null, user, null)).thenReturn(null);
+
+        QuickStockForm form = new QuickStockForm();
+        form.setName("빠른 품목");
+        form.setSpaceExternalId(SPACE_EXTERNAL_ID);
+        form.setCount(2);
+        form.setPrice(new BigDecimal("9000"));
+
+        stockService.createWithNewItem(form, USERNAME);
+
+        ArgumentCaptor<ItemDTO> itemCaptor = ArgumentCaptor.forClass(ItemDTO.class);
+        verify(itemMapper).insertItem(itemCaptor.capture());
+        assertThat(itemCaptor.getValue().getPrice()).isEqualByComparingTo("9000");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> stockCaptor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(stockCaptor.capture());
+        assertThat(stockCaptor.getValue()).allSatisfy(s -> assertThat(s.getPrice()).isEqualByComparingTo("9000"));
     }
 
     @Test

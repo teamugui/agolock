@@ -87,6 +87,7 @@ public class StockController {
         form.setSerialNumber(stock.getSerialNumber());
         form.setLotNumber(stock.getLotNumber());
         form.setExpirationDate(stock.getExpirationDate());
+        form.setPrice(stock.getPrice());
         form.setMemo(stock.getMemo());
         model.addAttribute("stock", stock);
         model.addAttribute("form", form);
@@ -413,12 +414,14 @@ public class StockController {
                          @RequestParam UUID spaceExternalId,
                          @RequestParam(required = false) UUID shelfExternalId,
                          @RequestParam(required = false) UUID boxExternalId,
+                         Principal principal,
                          Model model) {
         StockInOutForm form = new StockInOutForm();
         form.setItemExternalId(itemExternalId);
         form.setSpaceExternalId(spaceExternalId);
         form.setShelfExternalId(shelfExternalId);
         form.setBoxExternalId(boxExternalId);
+        form.setPrice(itemService.findByExternalId(itemExternalId, principal.getName()).getPrice());
         model.addAttribute("form", form);
         return "stocks/fragments/in-modal :: modal";
     }

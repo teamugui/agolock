@@ -1,6 +1,7 @@
 package com.seu.seustock.controller;
 
 import com.seu.seustock.model.dto.BoxDTO;
+import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDetailDTO;
@@ -101,6 +102,8 @@ class StockControllerTest extends AbstractControllerTest {
 
         // 품목 목록 (newModal)
         given(itemService.findAllByUsername(anyString())).willReturn(List.of());
+        // 품목 단건 (in-form 가격 prefill)
+        given(itemService.findByExternalId(any(), anyString())).willReturn(stubItem());
     }
 
     // ── Security: 미인증 리다이렉트 ────────────────────────────────────────
@@ -554,6 +557,16 @@ class StockControllerTest extends AbstractControllerTest {
         dto.setSpaceName("테스트 공간");
         dto.setStatus(StockStatus.IN_STOCK);
         dto.setCreatedAt(LocalDateTime.now());
+        return dto;
+    }
+
+    private ItemDTO stubItem() {
+        ItemDTO dto = new ItemDTO();
+        dto.setId(1L);
+        dto.setExternalId(ITEM_ID);
+        dto.setUserId(1L);
+        dto.setName("테스트 품목");
+        dto.setPrice(new java.math.BigDecimal("5000"));
         return dto;
     }
 

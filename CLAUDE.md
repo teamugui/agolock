@@ -91,16 +91,24 @@ com.seu.seustock
 - Batch inserts use `<foreach>` in the XML with a `List<T>` parameter (e.g., `StockMapper.insertStocks`, `StockTransactionMapper.insertTransactions`). Prefer batch inserts when creating multiple rows in one service call (e.g., `StockService.create()` with `count > 1`).
 
 **Authentication**
-- Spring Security is fully active. `SecurityConfig` declares a `SecurityFilterChain` with `DaoAuthenticationProvider` (backed by `CustomUserDetailsService`) and `CookieCsrfTokenRepository`. All routes require authentication except `/login`, `/register`, static assets, and QR scan-redirect endpoints.
-- Controllers obtain the current username via a `Principal principal` parameter: `principal.getName()`. The `GlobalModelAttributes` `@ControllerAdvice` exposes `currentUsername` to every Thymeleaf template from the same principal.
+- Spring Security is fully active. `SecurityConfig` declares a `SecurityFilterChain` with `DaoAuthenticationProvider` (backed by `CustomUserDetailsService`) and `CookieCsrfTokenRepository`. Public (`permitAll`) routes: `/login`, `/register`, `/register/check-email`, `/password/forgot`, `/password/reset`, static assets, and `/api/qr/generate` + `/api/qr/modal`. Everything else requires authentication.
+- **The login identifier is the email address**, not a username. Form login uses `usernameParameter("email")`, so `principal.getName()` returns the user's email; ownership checks and `UserMapper.findByEmail(...)` key off it.
+- Each user also has a display-only **nickname** (not unique). `CustomUserDetailsService` builds a custom `AuthenticatedUser` (in `configuration/`) carrying email + nickname. `GlobalModelAttributes` `@ControllerAdvice` exposes `currentUsername` (email) and `currentNickname` to every Thymeleaf template straight from the principal — no per-page DB lookup.
 - BCrypt strength is configured via `security.bcrypt.strength` (default 10) in `AppConfig.passwordEncoder()`.
 - Sessions are stored in Redis (`spring.session.store-type=redis`). The session cookie is `SESSION`; CSRF token cookie is `XSRF-TOKEN`.
 
 **CSRF**
 - `CookieCsrfTokenRepository.withHttpOnlyFalse()` is used so JavaScript can read the `XSRF-TOKEN` cookie. HTMX requests must include the token as the `X-XSRF-TOKEN` header; standard form POSTs receive it automatically via Thymeleaf's `th:action`. The `CsrfTokenRequestAttributeHandler` (non-XOR variant) is required so JS can pass the raw cookie value directly.
 
+**Password reset & mail**
+- Flow: `PasswordResetController` serves `GET/POST /password/forgot` (request + resend) and `GET/POST /password/reset` (set new password); `PasswordResetService` holds the logic. It is **anti-enumeration** (responds identically whether or not the email exists) and enforces a resend cooldown.
+- Tokens live in Redis via `PasswordResetTokenStore`: single-use, URL-safe 256-bit tokens with TTL `seustock.password-reset.token-ttl` (30m) and per-email cooldown `seustock.password-reset.resend-cooldown` (60s). `StringRedisTemplate` is autoconfigured whenever `spring.data.redis.*` is set, independent of the session store type.
+- Mail goes through the `PasswordResetMailSender` interface, with two implementations selected by `seustock.mail.type` via `@ConditionalOnProperty` (same "interface + conditional impl" pattern as `ImageStorageService`): `LoggingPasswordResetMailSender` (`logging`, default — logs only, never the recipient or token) and `SmtpPasswordResetMailSender` (`smtp` — real send via `JavaMailSender`). Exactly one bean is active for any value.
+- The SMTP sender renders `templates/email/password-reset.html` (inline-styled Korean HTML) through the Thymeleaf engine and resolves the subject from `messages.properties` (`mail.passwordReset.*`); it always sends in `Locale.KOREAN`.
+- SMTP is wired for Gmail. **All credentials are injected via env vars** (`MAIL_TYPE`, `MAIL_USERNAME`, `MAIL_PASSWORD` = Gmail app password) — never commit them. With Gmail the `From` is fixed to the authenticated account, so `seustock.mail.from` defaults to `MAIL_USERNAME`. Dev and tests default to `logging`, so no mail server is required. To send for real: `MAIL_TYPE=smtp MAIL_USERNAME=… MAIL_PASSWORD=… ./gradlew bootRun`.
+
 **Service ownership pattern**
-- Every service method that touches user-owned data follows the same sequence: resolve entity by external UUID → fetch owning user record → compare `userId` against the username from `Principal.getName()` → throw `SecurityException` if mismatch. When adding new service methods, mirror this pattern rather than skipping the ownership check.
+- Every service method that touches user-owned data follows the same sequence: resolve entity by external UUID → fetch the owning user record → compare its email against the login email from `Principal.getName()` → throw `SecurityException` if mismatch. When adding new service methods, mirror this pattern rather than skipping the ownership check.
 
 **HTMX responses**
 - `HtmxResponse` (in `configuration/`) is a utility for emitting `HX-Trigger` toast notification headers. Use `HtmxResponse.success(response, message)` / `HtmxResponse.error(response, message)` from controller methods rather than building the header string manually. Non-ASCII characters (Korean) are Unicode-escaped to remain JSON-safe inside the header value.
@@ -115,7 +123,7 @@ com.seu.seustock
 **Image storage**
 - `ImageStorageService` is an interface with two implementations: `MinioImageStorageService` (`@Primary`, stores objects in MinIO under `users/{id}/{uuid}.ext`) and `LocalImageStorageService` (disk-based fallback at `seustock.upload-dir`, defaults to `uploads/images`). MinIO is the active backend; configure it via `seustock.minio.*` properties.
 - Deduplication: if the client sends a SHA-256 `contentHash` and the user already has an image with that hash, the existing `ImageDTO` is returned without writing a new file.
-- Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`.
+- Upload validation runs through `ImageFileValidator.validateAndNormalizeContentType()`: the declared content type must be one of `image/jpeg`, `image/png`, `image/webp`, `image/gif` **and** match the file's actual magic bytes (signature). Content-type spoofing is rejected with `IllegalArgumentException`. Use this validator rather than trusting `MultipartFile.getContentType()` directly.
 - Images are linked to items or stocks via junction tables `item_images` / `stock_images` (with `display_order` and `is_primary` columns). `ImageMapper`, `ItemImageMapper`, and `StockImageMapper` are the corresponding mappers.
 - `GET /images/{externalId}` serves image files with ownership enforcement.
 - `static/js/image-upload.js` provides the client-side image hash computation and preview initialization (`initImageUpload({...}, scopeEl)`). Include it in any template that supports image upload and call `initImageUpload` scoped to the relevant container element. The optional `onImageReady(file)` callback fires after the preview is initialized and the hash is computed — use it for async operations like AI analysis.

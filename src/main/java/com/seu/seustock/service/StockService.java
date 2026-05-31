@@ -217,6 +217,7 @@ public class StockService {
             unit.setSerialNumber(form.getCount() == 1 ? form.getSerialNumber() : null);
             unit.setLotNumber(form.getLotNumber());
             unit.setExpirationDate(form.getExpirationDate());
+            unit.setPrice(form.getPrice() != null ? form.getPrice() : item.getPrice());
             units.add(unit);
         }
         stockMapper.insertStocks(units);
@@ -243,6 +244,7 @@ public class StockService {
         item.setUserId(user.getId());
         item.setName(form.getName());
         item.setDescription(form.getDescription());
+        item.setPrice(form.getPrice());
         itemMapper.insertItem(item);
         attachPrimaryImageIfPresent(item.getId(), user, form);
 
@@ -256,6 +258,7 @@ public class StockService {
             unit.setSpaceId(location.space().getId());
             unit.setShelfId(location.shelfId());
             unit.setBoxId(location.boxId());
+            unit.setPrice(form.getPrice());
             units.add(unit);
         }
         stockMapper.insertStocks(units);
@@ -291,6 +294,7 @@ public class StockService {
             unit.setSpaceId(location.space().getId());
             unit.setShelfId(location.shelfId());
             unit.setBoxId(location.boxId());
+            unit.setPrice(form.getPrice() != null ? form.getPrice() : item.getPrice());
             units.add(unit);
         }
         stockMapper.insertStocks(units);

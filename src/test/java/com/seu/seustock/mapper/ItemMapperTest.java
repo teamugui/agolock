@@ -12,6 +12,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -167,6 +168,37 @@ class ItemMapperTest {
         assertThat(found).isPresent();
         assertThat(found.get().getName()).isEqualTo("신형노트북");
         assertThat(found.get().getDescription()).isEqualTo("최신 노트북");
+    }
+
+    @Test
+    void insertItem_persistsPrice() {
+        ItemDTO item = buildItem("노트북", "업무용");
+        item.setPrice(new BigDecimal("1500000"));
+        itemMapper.insertItem(item);
+
+        ItemDTO found = itemMapper.findById(item.getId()).orElseThrow();
+        assertThat(found.getPrice()).isEqualByComparingTo("1500000");
+    }
+
+    @Test
+    void insertItem_nullPrice_persistsNull() {
+        ItemDTO item = buildItem("사은품", null);
+        itemMapper.insertItem(item);
+
+        assertThat(itemMapper.findById(item.getId()).orElseThrow().getPrice()).isNull();
+    }
+
+    @Test
+    void updateItem_changesPrice() {
+        ItemDTO item = buildItem("노트북", null);
+        item.setPrice(new BigDecimal("1000000"));
+        itemMapper.insertItem(item);
+        item.setPrice(new BigDecimal("1200000"));
+
+        itemMapper.updateItem(item);
+
+        assertThat(itemMapper.findById(item.getId()).orElseThrow().getPrice())
+                .isEqualByComparingTo("1200000");
     }
 
     @Test

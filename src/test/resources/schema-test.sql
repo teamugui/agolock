@@ -41,10 +41,12 @@ CREATE TABLE IF NOT EXISTS items (
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     expiration_period_days INT,
+    price       NUMERIC(12,0),
     active      BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT chk_items_expiration_period_days CHECK (expiration_period_days IS NULL OR expiration_period_days > 0)
+    CONSTRAINT chk_items_expiration_period_days CHECK (expiration_period_days IS NULL OR expiration_period_days > 0),
+    CONSTRAINT chk_items_price CHECK (price IS NULL OR price >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS item_serial_policies (
@@ -119,6 +121,7 @@ CREATE TABLE IF NOT EXISTS stocks (
     memo            TEXT,
     status          VARCHAR(20) NOT NULL DEFAULT 'IN_STOCK',
     is_kept         BOOLEAN NOT NULL DEFAULT FALSE,
+    price           NUMERIC(12,0),
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id)  REFERENCES items(id),
     FOREIGN KEY (space_id) REFERENCES spaces(id),
@@ -126,7 +129,8 @@ CREATE TABLE IF NOT EXISTS stocks (
     FOREIGN KEY (box_id)   REFERENCES boxes(id)   ON DELETE CASCADE,
     FOREIGN KEY (lot_id)   REFERENCES item_lots(id) ON DELETE SET NULL,
     CONSTRAINT chk_box_requires_shelf CHECK (box_id IS NULL OR shelf_id IS NOT NULL),
-    CONSTRAINT chk_stock_status CHECK (status IN ('IN_STOCK', 'DISPATCHED', 'LOST', 'DAMAGED', 'DISPOSED'))
+    CONSTRAINT chk_stock_status CHECK (status IN ('IN_STOCK', 'DISPATCHED', 'LOST', 'DAMAGED', 'DISPOSED')),
+    CONSTRAINT chk_stocks_price CHECK (price IS NULL OR price >= 0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_stocks_lot_id

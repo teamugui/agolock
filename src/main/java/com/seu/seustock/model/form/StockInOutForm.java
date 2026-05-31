@@ -1,10 +1,13 @@
 package com.seu.seustock.model.form;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -23,6 +26,10 @@ public class StockInOutForm {
 
     @Min(value = 1, message = "{valid.stockInOut.count.min}")
     private int count = 1;
+
+    @PositiveOrZero(message = "{valid.price.positive}")
+    @Digits(integer = 12, fraction = 0, message = "{valid.price.digits}")
+    private BigDecimal price;
 
     private String memo;
 
