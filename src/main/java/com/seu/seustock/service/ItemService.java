@@ -48,15 +48,20 @@ public class ItemService {
     }
 
     public List<ItemDTO> findAllByUsername(String username, String keyword, String sortBy) {
-        return findPageByUsername(username, keyword, sortBy, 1).content();
+        return findPageByUsername(username, keyword, "name", sortBy, 1).content();
     }
 
     public PageResult<ItemDTO> findPageByUsername(String username, String keyword, String sortBy, Integer page) {
+        return findPageByUsername(username, keyword, "name", sortBy, page);
+    }
+
+    public PageResult<ItemDTO> findPageByUsername(String username, String keyword, String searchType, String sortBy, Integer page) {
         UserDTO user = getUser(username);
         String effectiveKeyword = normalizeKeyword(keyword);
-        int totalCount = itemMapper.countByUserIdWithOptions(user.getId(), effectiveKeyword);
+        String effectiveSearchType = normalizeSearchType(searchType);
+        int totalCount = itemMapper.countByUserIdWithOptions(user.getId(), effectiveKeyword, effectiveSearchType);
         PageRequest pageRequest = PageRequest.of(page, totalCount);
-        List<ItemDTO> items = itemMapper.findByUserIdWithOptions(user.getId(), effectiveKeyword,
+        List<ItemDTO> items = itemMapper.findByUserIdWithOptions(user.getId(), effectiveKeyword, effectiveSearchType,
                 normalizeSort(sortBy), pageRequest.size(), pageRequest.offset());
         return new PageResult<>(items, pageRequest.page(), pageRequest.size(), totalCount);
     }
@@ -135,6 +140,10 @@ public class ItemService {
 
     private String normalizeKeyword(String keyword) {
         return keyword == null || keyword.isBlank() ? null : keyword.trim();
+    }
+
+    private String normalizeSearchType(String searchType) {
+        return "description".equals(searchType) ? "description" : "name";
     }
 
     private String normalizeSort(String sortBy) {

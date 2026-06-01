@@ -32,7 +32,7 @@ class ItemControllerTest extends AbstractControllerTest {
 
     @BeforeEach
     void stubDefaults() {
-        given(itemService.findPageByUsername(anyString(), any(), anyString(), any()))
+        given(itemService.findPageByUsername(anyString(), any(), anyString(), anyString(), any()))
                 .willReturn(new PageResult<>(List.of(), 1, 10, 0));
         given(itemService.findByExternalId(any(), anyString())).willReturn(stubItem());
         given(itemService.create(anyString(), any())).willReturn(stubItem());

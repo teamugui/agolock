@@ -36,4 +36,5 @@ public class ItemDTO {
     private LocalDateTime createdAt;
     private int stockCount;
     private int spaceCount;
+    private int historyCount;
 }

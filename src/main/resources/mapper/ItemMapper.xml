@@ -28,7 +28,23 @@
         <result property="createdAt"   column="created_at"/>
         <result property="stockCount"  column="stock_count"/>
         <result property="spaceCount"  column="space_count"/>
+        <result property="historyCount" column="history_count"/>
     </resultMap>
+
+    <sql id="ItemListMetrics">
+        (SELECT COUNT(*)
+         FROM stocks s
+         WHERE s.item_id = i.id
+           AND s.status = 'IN_STOCK') AS stock_count,
+        (SELECT COUNT(DISTINCT s.space_id)
+         FROM stocks s
+         WHERE s.item_id = i.id
+           AND s.status = 'IN_STOCK') AS space_count,
+        (SELECT COUNT(*)
+         FROM stock_transactions st
+         JOIN stocks s ON st.stock_id = s.id
+         WHERE s.item_id = i.id) AS history_count
+    </sql>
 
     <insert id="insertItem" parameterType="ItemDTO"
             useGeneratedKeys="true" keyProperty="id">
@@ -60,14 +76,7 @@
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
                ) AS primary_image_external_id,
-               (SELECT COUNT(*)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS stock_count,
-               (SELECT COUNT(DISTINCT s.space_id)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS space_count
+               <include refid="ItemListMetrics"/>
         FROM items i
         WHERE i.id = #{id}
     </select>
@@ -86,14 +95,7 @@
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
                ) AS primary_image_external_id,
-               (SELECT COUNT(*)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS stock_count,
-               (SELECT COUNT(DISTINCT s.space_id)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS space_count
+               <include refid="ItemListMetrics"/>
         FROM items i
         WHERE i.external_id = #{externalId}
     </select>
@@ -112,14 +114,7 @@
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
                ) AS primary_image_external_id,
-               (SELECT COUNT(*)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS stock_count,
-               (SELECT COUNT(DISTINCT s.space_id)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS space_count
+               <include refid="ItemListMetrics"/>
         FROM items i
         WHERE i.user_id = #{userId}
           AND i.active = TRUE
@@ -139,19 +134,19 @@
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
                ) AS primary_image_external_id,
-               (SELECT COUNT(*)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS stock_count,
-               (SELECT COUNT(DISTINCT s.space_id)
-                FROM stocks s
-                WHERE s.item_id = i.id
-                  AND s.status = 'IN_STOCK') AS space_count
+               <include refid="ItemListMetrics"/>
         FROM items i
         WHERE i.user_id = #{userId}
           AND i.active = TRUE
         <if test="keyword != null and keyword != ''">
-          AND i.name LIKE CONCAT('%', #{keyword}, '%')
+          <choose>
+              <when test="searchType == 'description'">
+                  AND i.description LIKE CONCAT('%', #{keyword}, '%')
+              </when>
+              <otherwise>
+                  AND i.name LIKE CONCAT('%', #{keyword}, '%')
+              </otherwise>
+          </choose>
         </if>
         ORDER BY
         <choose>
@@ -174,7 +169,14 @@
         WHERE i.user_id = #{userId}
           AND i.active = TRUE
         <if test="keyword != null and keyword != ''">
-          AND i.name LIKE CONCAT('%', #{keyword}, '%')
+          <choose>
+              <when test="searchType == 'description'">
+                  AND i.description LIKE CONCAT('%', #{keyword}, '%')
+              </when>
+              <otherwise>
+                  AND i.name LIKE CONCAT('%', #{keyword}, '%')
+              </otherwise>
+          </choose>
         </if>
     </select>
 

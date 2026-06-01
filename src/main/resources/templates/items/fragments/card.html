@@ -6,7 +6,7 @@
 <div th:fragment="view"
      th:id="'item-' + ${item.externalId}"
      data-item-card
-     class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_8rem] md:items-center">
+     class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_10rem] md:items-center">
 
     <div class="flex min-w-0 items-center gap-3">
         <img th:src="${item.primaryImageExternalId != null} ? @{/images/{id}(id=${item.primaryImageExternalId})} : @{/image/placeholder/item_placeholder_v2.png}"
@@ -55,13 +55,13 @@
         </div>
     </div>
 
-    <div class="flex items-center gap-2 md:justify-end">
-        <button class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+    <div class="flex flex-wrap items-center gap-2 md:justify-end">
+        <button class="whitespace-nowrap rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 th:attr="hx-get=@{/items/{id}/history(id=${item.externalId})}"
                 hx-target="#modal"
                 hx-swap="outerHTML"
-                th:text="#{view.item.card.history}">기록</button>
-        <button class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                th:text="${item.historyCount > 0} ? #{view.item.card.historyCount(${item.historyCount})} : #{view.item.card.historyNone}">기록없음</button>
+        <button class="whitespace-nowrap rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 th:attr="hx-get=@{/items/{id}/edit(id=${item.externalId})},hx-target='#item-' + ${item.externalId}"
                 hx-swap="outerHTML"
                 th:text="#{view.common.edit}">수정</button>
@@ -73,7 +73,7 @@
 <div th:fragment="edit"
      th:id="'item-' + ${item.externalId}"
      data-item-card
-     class="grid max-h-[calc(100vh-8rem)] gap-3 overflow-y-auto border-l-4 border-blue-500 bg-blue-50/40 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_8rem] md:items-start">
+     class="grid max-h-[calc(100vh-8rem)] gap-3 overflow-y-auto border-l-4 border-blue-500 bg-blue-50/40 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_10rem] md:items-start">
 
     <div class="min-w-0">
         <div class="mb-2 w-20 md:w-full">

@@ -91,13 +91,17 @@ public class SpaceService {
         return getUser(username).getId();
     }
 
-    public void create(String username, SpaceForm form) {
+    public SpaceDTO create(String username, SpaceForm form) {
         UserDTO user = getUser(username);
         SpaceDTO space = new SpaceDTO();
         space.setUserId(user.getId());
         space.setName(form.getName());
         spaceMapper.insertSpace(space);
         log.info("space created userId={} spaceId={}", user.getId(), space.getId());
+        if (space.getId() == null) {
+            return space;
+        }
+        return spaceMapper.findById(space.getId()).orElse(space);
     }
 
     public SpaceDTO update(UUID externalId, SpaceForm form, String username) {

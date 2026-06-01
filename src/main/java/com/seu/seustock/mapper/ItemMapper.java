@@ -16,11 +16,13 @@ public interface ItemMapper {
     List<ItemDTO> findByUserId(Long userId);
     List<ItemDTO> findByUserIdWithOptions(@Param("userId") Long userId,
                                           @Param("keyword") String keyword,
+                                          @Param("searchType") String searchType,
                                           @Param("sortBy") String sortBy,
                                           @Param("limit") int limit,
                                           @Param("offset") int offset);
     int countByUserIdWithOptions(@Param("userId") Long userId,
-                                 @Param("keyword") String keyword);
+                                 @Param("keyword") String keyword,
+                                 @Param("searchType") String searchType);
     void updateItem(ItemDTO item);
     void updateSerialNextSequence(@Param("id") Long id,
                                   @Param("serialNextSequence") long serialNextSequence);

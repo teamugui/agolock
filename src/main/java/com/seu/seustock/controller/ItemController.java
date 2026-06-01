@@ -31,14 +31,16 @@ public class ItemController {
 
     @GetMapping
     public String list(@RequestParam(required = false) String keyword,
+                       @RequestParam(required = false, defaultValue = "name") String searchType,
                        @RequestParam(required = false, defaultValue = "newest") String sortBy,
                        @RequestParam(required = false) Integer page,
                        Principal principal, Model model) {
         String username = principal.getName();
-        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        var itemsPage = itemService.findPageByUsername(username, keyword, searchType, sortBy, page);
         model.addAttribute("items", itemsPage.content());
         model.addAttribute("page", itemsPage);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("searchType", searchType);
         model.addAttribute("sortBy", sortBy);
         return "items/list";
     }
@@ -123,6 +125,7 @@ public class ItemController {
     @DeleteMapping("/{externalId}")
     public String delete(@PathVariable UUID externalId,
                          @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false, defaultValue = "name") String searchType,
                          @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          @RequestParam(required = false) Integer page,
                          Principal principal,
@@ -130,10 +133,11 @@ public class ItemController {
                          HttpServletResponse response) {
         String username = principal.getName();
         itemService.delete(externalId, username);
-        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        var itemsPage = itemService.findPageByUsername(username, keyword, searchType, sortBy, page);
         model.addAttribute("items", itemsPage.content());
         model.addAttribute("page", itemsPage);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("searchType", searchType);
         model.addAttribute("sortBy", sortBy);
         HtmxResponse.success(response, getMsg("toast.item.deleted"));
         return "items/list :: item-list-section";

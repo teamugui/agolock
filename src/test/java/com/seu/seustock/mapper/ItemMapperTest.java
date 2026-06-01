@@ -3,8 +3,10 @@ package com.seu.seustock.mapper;
 import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
+import com.seu.seustock.model.dto.StockTransactionDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.enumeration.TrackingMode;
+import com.seu.seustock.model.enumeration.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -36,6 +38,9 @@ class ItemMapperTest {
 
     @Autowired
     private StockMapper stockMapper;
+
+    @Autowired
+    private StockTransactionMapper stockTransactionMapper;
 
     private Long userId;
 
@@ -80,7 +85,7 @@ class ItemMapperTest {
     }
 
     @Test
-    void findByExternalId_includesStockAndSpaceCounts() {
+    void findByExternalId_includesStockSpaceAndHistoryCounts() {
         ItemDTO item = buildItem("노트북", null);
         itemMapper.insertItem(item);
         SpaceDTO space = new SpaceDTO();
@@ -91,6 +96,10 @@ class ItemMapperTest {
         stock.setItemId(item.getId());
         stock.setSpaceId(space.getId());
         stockMapper.insertStock(stock);
+        StockTransactionDTO transaction = new StockTransactionDTO();
+        transaction.setStockId(stock.getId());
+        transaction.setTransactionType(TransactionType.IN);
+        stockTransactionMapper.insertTransaction(transaction);
         ItemDTO persisted = itemMapper.findById(item.getId()).orElseThrow();
 
         Optional<ItemDTO> found = itemMapper.findByExternalId(persisted.getExternalId());
@@ -98,6 +107,7 @@ class ItemMapperTest {
         assertThat(found).isPresent();
         assertThat(found.get().getStockCount()).isEqualTo(1);
         assertThat(found.get().getSpaceCount()).isEqualTo(1);
+        assertThat(found.get().getHistoryCount()).isEqualTo(1);
     }
 
     @Test
@@ -117,12 +127,24 @@ class ItemMapperTest {
         itemMapper.insertItem(buildItem("무선 마우스", null));
         itemMapper.insertItem(buildItem("유선 마우스", null));
 
-        List<ItemDTO> searched = itemMapper.findByUserIdWithOptions(userId, "마우스", "name", 10, 0);
-        List<ItemDTO> oldest = itemMapper.findByUserIdWithOptions(userId, null, "oldest", 10, 0);
+        List<ItemDTO> searched = itemMapper.findByUserIdWithOptions(userId, "마우스", "name", "name", 10, 0);
+        List<ItemDTO> oldest = itemMapper.findByUserIdWithOptions(userId, null, "name", "oldest", 10, 0);
 
         assertThat(searched).extracting(ItemDTO::getName).containsExactly("무선 마우스", "유선 마우스");
         assertThat(oldest).extracting(ItemDTO::getName).containsExactly("노트북", "무선 마우스", "유선 마우스");
-        assertThat(itemMapper.countByUserIdWithOptions(userId, "마우스")).isEqualTo(2);
+        assertThat(itemMapper.countByUserIdWithOptions(userId, "마우스", "name")).isEqualTo(2);
+    }
+
+    @Test
+    void findByUserIdWithOptions_filtersByDescription() {
+        itemMapper.insertItem(buildItem("노트북", "휴대용 업무 장비"));
+        itemMapper.insertItem(buildItem("마우스", "무선 입력 장비"));
+        itemMapper.insertItem(buildItem("키보드", "유선 입력 장비"));
+
+        List<ItemDTO> searched = itemMapper.findByUserIdWithOptions(userId, "입력", "description", "name", 10, 0);
+
+        assertThat(searched).extracting(ItemDTO::getName).containsExactly("마우스", "키보드");
+        assertThat(itemMapper.countByUserIdWithOptions(userId, "입력", "description")).isEqualTo(2);
     }
 
     @Test
@@ -131,12 +153,12 @@ class ItemMapperTest {
             itemMapper.insertItem(buildItem("품목%02d".formatted(i), null));
         }
 
-        List<ItemDTO> firstPage = itemMapper.findByUserIdWithOptions(userId, null, "name", 10, 0);
-        List<ItemDTO> secondPage = itemMapper.findByUserIdWithOptions(userId, null, "name", 10, 10);
+        List<ItemDTO> firstPage = itemMapper.findByUserIdWithOptions(userId, null, "name", "name", 10, 0);
+        List<ItemDTO> secondPage = itemMapper.findByUserIdWithOptions(userId, null, "name", "name", 10, 10);
 
         assertThat(firstPage).hasSize(10);
         assertThat(secondPage).extracting(ItemDTO::getName).containsExactly("품목10", "품목11");
-        assertThat(itemMapper.countByUserIdWithOptions(userId, null)).isEqualTo(12);
+        assertThat(itemMapper.countByUserIdWithOptions(userId, null, "name")).isEqualTo(12);
     }
 
     @Test

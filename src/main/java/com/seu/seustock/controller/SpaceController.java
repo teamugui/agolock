@@ -67,19 +67,30 @@ public class SpaceController {
         return "spaces/detail";
     }
 
+    @GetMapping("/new")
+    public String newModal(Model model) {
+        model.addAttribute("form", new SpaceForm());
+        return "spaces/fragments/modal :: modal";
+    }
+
     @PostMapping
     public String create(@Valid @ModelAttribute("form") SpaceForm form,
                          BindingResult result,
                          @RequestParam(required = false) String keyword,
                          @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          @RequestParam(required = false) Integer page,
+                         @RequestHeader(value = "HX-Request", required = false) String htmxRequest,
                          Principal principal,
                          Model model,
+                         HttpServletResponse response,
                          RedirectAttributes redirectAttributes) {
         String username = principal.getName();
         if (result.hasErrors()) {
             log.warn("request validation failed operation=space.create errorCount={} fields={}",
                     result.getErrorCount(), ControllerLogSupport.invalidFields(result));
+            if ("true".equals(htmxRequest)) {
+                return "spaces/fragments/modal :: modal";
+            }
             var spacesPage = spaceService.findPageByUsername(username, keyword, sortBy, page);
             model.addAttribute("spaces", spacesPage.content());
             model.addAttribute("page", spacesPage);
@@ -88,7 +99,13 @@ public class SpaceController {
             addSummaries(model, spacesPage.content());
             return "spaces/list";
         }
-        spaceService.create(username, form);
+        SpaceDTO created = spaceService.create(username, form);
+        if ("true".equals(htmxRequest)) {
+            model.addAttribute("space", created);
+            addSummaries(model, List.of(created));
+            HtmxResponse.success(response, getMsg("toast.space.created"));
+            return "spaces/fragments/modal :: created";
+        }
         redirectAttributes.addFlashAttribute("toastType", "success");
         redirectAttributes.addFlashAttribute("toastMessage", getMsg("toast.space.created"));
         return "redirect:/spaces";

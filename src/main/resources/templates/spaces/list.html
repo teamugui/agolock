@@ -7,33 +7,22 @@
 
 <nav th:replace="~{fragments/layout :: nav}"></nav>
 
+<div id="modal"></div>
+
 <main class="mx-auto w-full max-w-3xl px-4 py-10 flex-1">
 
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-2xl font-bold text-slate-800" th:text="#{view.space.list.title}">내 공간</h1>
-    </div>
-
-    <!-- 공간 추가 폼 -->
-    <form th:action="@{/spaces}" th:object="${form}" method="post"
-          class="mb-6 flex flex-col sm:flex-row sm:items-start gap-2">
-        <div class="flex-1">
-            <input type="text" th:field="*{name}"
-                   th:classappend="${#fields.hasErrors('name')} ? 'border-red-400'"
-                   class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
-                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                          transition"
-                   th:placeholder="#{view.space.list.addPlaceholder}">
-            <span th:if="${#fields.hasErrors('name')}"
-                  th:errors="*{name}"
-                  class="mt-1 block text-xs text-red-500"></span>
-        </div>
-        <button type="submit"
+        <button type="button"
+                hx-get="/spaces/new"
+                hx-target="#modal"
+                hx-swap="outerHTML"
                 class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white
-                       hover:bg-blue-700 transition whitespace-nowrap"
-                th:text="|+#{view.common.add}|">
-            + 추가
+                       hover:bg-blue-700 transition"
+                th:text="#{view.space.list.add}">
+            + 공간 추가
         </button>
-    </form>
+    </div>
 
     <!-- 공간 목록 -->
     <div id="space-list-section" th:fragment="space-list-section" class="space-y-3">
@@ -43,17 +32,17 @@
                   hx-select="#space-list-section"
                   hx-swap="outerHTML"
                   hx-push-url="true"
-                  class="flex items-center gap-2">
+                  class="flex items-stretch">
                 <input type="hidden" name="sortBy" th:value="${sortBy}">
                 <input type="hidden" name="page" value="1">
-                <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500" th:text="#{view.space.list.searchLabel}">공간명</span>
+                <span class="inline-flex shrink-0 items-center rounded-l-md rounded-r-none border border-r-0 border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-500" th:text="#{view.space.list.searchLabel}">공간명</span>
                 <input type="text"
                        name="keyword"
                        th:value="${keyword}"
                        th:placeholder="#{view.space.list.searchPlaceholder}"
-                       class="flex-1 min-w-0 rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                       class="flex-1 min-w-0 rounded-none border border-slate-200 px-3 py-1.5 text-sm text-slate-700 placeholder-slate-400 focus:z-10 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400">
                 <button type="submit"
-                        class="shrink-0 rounded-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition"
+                        class="shrink-0 rounded-l-none rounded-r-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition"
                         th:text="#{view.common.search}">
                     검색
                 </button>
@@ -91,14 +80,14 @@
                 <div th:text="#{view.space.list.table.manage}">관리</div>
             </div>
 
-            <div th:if="${spaces.empty}"
+            <div id="space-empty-msg"
+                 th:if="${spaces.empty}"
                  class="px-4 py-10 text-center text-sm text-slate-400"
                  th:text="#{view.space.list.empty}">
                 등록된 공간이 없습니다. 위에서 추가해보세요.
             </div>
 
             <div id="space-list-rows"
-                 th:if="${!spaces.empty}"
                  class="divide-y divide-slate-100">
                 <th:block th:each="space : ${spaces}">
                     <th:block th:replace="~{spaces/fragments/row :: view}"></th:block>
