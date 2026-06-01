@@ -9,6 +9,16 @@
 
 <div id="modal"></div>
 
+<style>
+    .selected-tree-item {
+        background-color: #eff6ff !important; /* blue-50 */
+    }
+    .selected-tree-item .tree-item-text {
+        color: #1d4ed8 !important; /* blue-700 */
+        font-weight: 600 !important;
+    }
+</style>
+
 <main class="mx-auto w-full max-w-5xl px-4 py-10 flex-1">
 
     <!-- 헤더 -->
@@ -39,22 +49,22 @@
             </ul>
 
             <!-- 전체보기 진입점 -->
-            <div class="border-t border-slate-100 px-3">
+            <div class="tree-item-container selected-tree-item border-t border-slate-100 px-3">
                 <button th:attr="hx-get=@{/spaces/{id}/stocks/all(id=${space.externalId})}"
                         hx-target="#stock-panel"
                         hx-swap="outerHTML"
-                        class="w-full text-left text-sm font-medium text-slate-600 hover:text-slate-900 transition py-3 min-h-[56px] flex items-center"
+                        class="tree-item-trigger tree-item-text w-full text-left text-sm font-medium text-slate-600 hover:text-slate-900 active:bg-slate-50 transition py-3 min-h-[56px] flex items-center"
                         th:text="|🗂 #{view.space.detail.viewAll(${space.name})}|">
                     🗂 [[${space.name}]] 전체보기
                 </button>
             </div>
 
             <!-- 공간 직접 재고 진입점 -->
-            <div class="border-t border-slate-100 px-3">
+            <div class="tree-item-container border-t border-slate-100 px-3">
                 <button th:attr="hx-get=@{/spaces/{id}/stocks(id=${space.externalId})}"
                         hx-target="#stock-panel"
                         hx-swap="outerHTML"
-                        class="w-full text-left text-sm text-slate-500 hover:text-slate-800 transition py-3 min-h-[56px] flex items-center"
+                        class="tree-item-trigger tree-item-text w-full text-left text-sm text-slate-500 hover:text-slate-800 active:bg-slate-50 transition py-3 min-h-[56px] flex items-center"
                         th:text="|📦 #{view.space.detail.viewLoose(${space.name})}|">
                     📦 [[${space.name}]]에 대충 던져놓은 물건들
                 </button>
@@ -174,6 +184,19 @@
         input.value = value || '';
         return input;
     }
+
+    document.addEventListener('htmx:afterRequest', function(evt) {
+        const triggerEl = evt.detail.elt;
+        if (triggerEl && triggerEl.classList.contains('tree-item-trigger')) {
+            document.querySelectorAll('.tree-item-container').forEach(function(el) {
+                el.classList.remove('selected-tree-item');
+            });
+            const container = triggerEl.closest('.tree-item-container');
+            if (container) {
+                container.classList.add('selected-tree-item');
+            }
+        }
+    });
 </script>
 
 </body>

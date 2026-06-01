@@ -7,7 +7,7 @@
     class="border-b border-slate-100 last:border-0">
 
     <!-- Shelf 헤더: 클릭 첫 번째→HTMX로 Box 목록 로드, 이후→JS 토글 -->
-    <div class="flex items-center gap-1 px-3 py-3 bg-slate-50 hover:bg-slate-100 transition cursor-pointer group"
+    <div class="tree-item-container flex items-center gap-1 px-3 py-3 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 transition cursor-pointer group"
          th:attr="onclick='toggleBoxList(\'' + ${shelf.externalId} + '\', this)',
                   hx-get=@{/spaces/{sid}/shelves/{id}/boxes(sid=${spaceExternalId},id=${shelf.externalId})},
                   hx-target='#box-list-' + ${shelf.externalId}"
@@ -18,7 +18,7 @@
 
         <!-- Shelf명 클릭 → 선반 직접 재고 패널 로드 -->
         <button type="button"
-                class="flex-1 text-left text-sm font-medium text-slate-700 truncate"
+                class="tree-item-trigger tree-item-text flex-1 text-left text-sm font-medium text-slate-700 truncate"
                 th:text="${shelf.name}"
                 th:attr="hx-get=@{/spaces/{sid}/shelves/{id}/stocks(sid=${spaceExternalId},id=${shelf.externalId})}"
                 hx-target="#stock-panel"

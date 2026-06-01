@@ -31,26 +31,28 @@
     <div th:unless="${item.description != null and !item.description.isEmpty()}"
          class="hidden md:block text-slate-300 min-h-[1.25rem] min-w-0">—</div>
 
-    <div class="flex items-center gap-2 text-xs min-w-0">
-        <a th:if="${item.stockCount > 0}"
-           th:href="@{/stocks(itemExternalId=${item.externalId})}"
-           class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 font-medium hover:bg-blue-100 transition"
-           th:text="#{view.item.card.stockCount(${item.stockCount})}"></a>
-        <span th:if="${item.stockCount == 0}"
-              class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
-              th:text="#{view.item.card.stockCount(${item.stockCount})}"></span>
-    </div>
+    <div class="flex flex-wrap items-center gap-2 min-w-0 md:contents">
+        <div class="flex items-center gap-2 text-xs min-w-0">
+            <a th:if="${item.stockCount > 0}"
+               th:href="@{/stocks(itemExternalId=${item.externalId})}"
+               class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 font-medium hover:bg-blue-100 transition"
+               th:text="#{view.item.card.stockCount(${item.stockCount})}"></a>
+            <span th:if="${item.stockCount == 0}"
+                  class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
+                  th:text="#{view.item.card.stockCount(${item.stockCount})}"></span>
+        </div>
 
-    <div class="text-xs min-w-0">
-        <button th:if="${item.spaceCount > 0}"
-                th:attr="hx-get=@{/items/{id}/spaces(id=${item.externalId})}"
-                hx-target="#modal"
-                hx-swap="outerHTML"
-                class="text-slate-500 underline-offset-2 hover:text-blue-600 hover:underline transition"
-                th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></button>
-        <span th:if="${item.spaceCount == 0}"
-              class="text-slate-500"
-              th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></span>
+        <div class="flex items-center gap-2 text-xs min-w-0">
+            <button th:if="${item.spaceCount > 0}"
+                    th:attr="hx-get=@{/items/{id}/spaces(id=${item.externalId})}"
+                    hx-target="#modal"
+                    hx-swap="outerHTML"
+                    class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700 font-medium hover:bg-emerald-100 transition"
+                    th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></button>
+            <span th:if="${item.spaceCount == 0}"
+                  class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
+                  th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></span>
+        </div>
     </div>
 
     <div class="flex items-center gap-2 md:justify-end">
@@ -142,11 +144,14 @@
                 <div class="grid grid-cols-3 gap-1">
                     <input type="text" name="serialPrefix" th:value="${item.serialPrefix}" th:placeholder="#{view.item.policy.serialPrefix}"
                            class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
-                    <input type="number" min="0" name="serialPaddingLength" th:value="${item.serialPaddingLength}" th:placeholder="#{view.item.policy.serialPadding}"
+                    <input type="number" min="0" max="16" name="serialPaddingLength" th:value="${item.serialPaddingLength}" th:placeholder="#{view.item.policy.serialPadding}"
                            class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                     <input type="number" min="0" name="serialNextSequence" th:value="${item.serialNextSequence}" th:placeholder="#{view.item.policy.serialNext}"
                            class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                 </div>
+                <p data-serial-preview
+                   th:data-label="#{view.item.policy.serialPreview}"
+                   class="hidden rounded-md bg-blue-50 px-2 py-1.5 text-xs font-medium text-blue-700"></p>
                 <input type="hidden" name="serialIncrementUnit" th:value="${item.serialIncrementUnit}">
 
                 <select name="lotMode" class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
@@ -160,25 +165,43 @@
                     <input type="number" min="1" name="expirationPeriodDays" th:value="${item.expirationPeriodDays}" th:placeholder="#{view.item.policy.expirationDays}"
                            class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                 </div>
+                <p data-lot-preview
+                   th:data-label="#{view.item.policy.lotPreview}"
+                   class="hidden rounded-md bg-blue-50 px-2 py-1.5 text-xs font-medium text-blue-700"></p>
+                <p data-expiration-preview
+                   th:data-label="#{view.item.policy.expirationPreview}"
+                   class="hidden rounded-md bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700"></p>
                 <input type="hidden" name="lotDateFormat" th:value="${item.lotDateFormat}">
                 <input type="hidden" name="lotIncludeSequence" th:value="${item.lotIncludeSequence}">
                 <input type="hidden" name="lotNextSequence" th:value="${item.lotNextSequence}">
+                <input type="hidden" data-lot-sequence-key th:value="${item.lotSequenceKey}">
             </div>
         </details>
     </div>
 
-    <div class="flex items-start gap-2 text-xs md:block min-w-0">
-        <a th:if="${item.stockCount > 0}"
-           th:href="@{/stocks(itemExternalId=${item.externalId})}"
-           class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 font-medium hover:bg-blue-100 transition"
-           th:text="#{view.item.card.stockCount(${item.stockCount})}"></a>
-        <span th:if="${item.stockCount == 0}"
-              class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
-              th:text="#{view.item.card.stockCount(${item.stockCount})}"></span>
-    </div>
+    <div class="flex flex-wrap items-center gap-2 min-w-0 md:contents">
+        <div class="flex flex-wrap items-center gap-2 text-xs min-w-0">
+            <a th:if="${item.stockCount > 0}"
+               th:href="@{/stocks(itemExternalId=${item.externalId})}"
+               class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 font-medium hover:bg-blue-100 transition"
+               th:text="#{view.item.card.stockCount(${item.stockCount})}"></a>
+            <span th:if="${item.stockCount == 0}"
+                  class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
+                  th:text="#{view.item.card.stockCount(${item.stockCount})}"></span>
+        </div>
 
-    <p class="text-sm text-slate-500 min-w-0"
-       th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></p>
+        <div class="flex flex-wrap items-center gap-2 text-xs min-w-0">
+            <button th:if="${item.spaceCount > 0}"
+                    th:attr="hx-get=@{/items/{id}/spaces(id=${item.externalId})}"
+                    hx-target="#modal"
+                    hx-swap="outerHTML"
+                    class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700 font-medium hover:bg-emerald-100 transition"
+                    th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></button>
+            <span th:if="${item.spaceCount == 0}"
+                  class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
+                  th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></span>
+        </div>
+    </div>
 
     <div class="flex flex-wrap gap-2 items-center md:justify-end">
         <button class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition md:order-last"
@@ -252,6 +275,9 @@
             if (lotMode) {
                 lotMode.addEventListener('change', updateLot);
                 updateLot();
+            }
+            if (window.initTrackingPolicyPreview) {
+                window.initTrackingPolicyPreview(card);
             }
         })();
 

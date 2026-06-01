@@ -103,11 +103,14 @@
                     <div class="grid grid-cols-3 gap-2">
                         <input type="text" th:field="*{serialPrefix}" th:placeholder="#{view.item.policy.serialPrefix}"
                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
-                        <input type="number" min="0" th:field="*{serialPaddingLength}" th:placeholder="#{view.item.policy.serialPadding}"
+                        <input type="number" min="0" max="16" th:field="*{serialPaddingLength}" th:placeholder="#{view.item.policy.serialPadding}"
                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                         <input type="number" min="0" th:field="*{serialNextSequence}" th:placeholder="#{view.item.policy.serialNext}"
                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                     </div>
+                    <p data-serial-preview
+                       th:data-label="#{view.item.policy.serialPreview}"
+                       class="hidden rounded-md bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700"></p>
                     <input type="hidden" th:field="*{serialIncrementUnit}" value="1">
 
                     <div>
@@ -125,6 +128,12 @@
                         <input type="number" min="1" th:field="*{expirationPeriodDays}" th:placeholder="#{view.item.policy.expirationDays}"
                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                     </div>
+                    <p data-lot-preview
+                       th:data-label="#{view.item.policy.lotPreview}"
+                       class="hidden rounded-md bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700"></p>
+                    <p data-expiration-preview
+                       th:data-label="#{view.item.policy.expirationPreview}"
+                       class="hidden rounded-md bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700"></p>
                     <input type="hidden" th:field="*{lotDateFormat}" value="yyyyMMdd">
                     <input type="hidden" th:field="*{lotIncludeSequence}" value="true">
                     <input type="hidden" th:field="*{lotNextSequence}" value="0">
@@ -208,6 +217,9 @@
         if (lotMode) {
             lotMode.addEventListener('change', updateLot);
             updateLot();
+        }
+        if (window.initTrackingPolicyPreview) {
+            window.initTrackingPolicyPreview(modal);
         }
     })();
     </script>

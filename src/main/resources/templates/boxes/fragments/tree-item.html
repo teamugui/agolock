@@ -4,13 +4,13 @@
 
 <li th:fragment="tree-item(box, spaceExternalId, shelfExternalId)"
     th:id="'box-' + ${box.externalId}"
-    class="flex items-center gap-1 px-3 py-2.5 hover:bg-slate-50 transition cursor-pointer group">
+    class="tree-item-container flex items-center gap-1 px-3 py-2.5 hover:bg-slate-50 active:bg-slate-200 transition cursor-pointer group">
 
     <span class="text-xs text-slate-300 w-3 shrink-0">□</span>
 
     <!-- Box명 클릭 → 박스 재고 패널 로드 -->
     <button type="button"
-            class="flex-1 text-left text-sm text-slate-600 truncate"
+            class="tree-item-trigger tree-item-text flex-1 text-left text-sm text-slate-600 truncate"
             th:text="${box.name}"
             th:attr="hx-get=@{/spaces/{sid}/shelves/{shid}/boxes/{id}/stocks(sid=${spaceExternalId},shid=${shelfExternalId},id=${box.externalId})}"
             hx-target="#stock-panel"

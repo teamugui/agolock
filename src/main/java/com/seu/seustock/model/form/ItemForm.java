@@ -2,6 +2,7 @@ package com.seu.seustock.model.form;
 
 import com.seu.seustock.model.enumeration.TrackingMode;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -35,6 +36,7 @@ public class ItemForm {
     private String serialPrefix;
 
     @Min(value = 0, message = "{valid.item.serialPaddingLength.min}")
+    @Max(value = 16, message = "{valid.item.serialPaddingLength.max}")
     private int serialPaddingLength = 0;
 
     @Min(value = 1, message = "{valid.item.serialIncrementUnit.min}")
