@@ -124,13 +124,6 @@
                 th:text="#{view.common.edit}">
             수정
         </button>
-        <button type="button"
-                th:attr="hx-delete=@{/stocks/{id}(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId},hx-confirm=#{view.stock.detail.deleteConfirm(${stock.itemName})}"
-                hx-swap="outerHTML"
-                class="shrink-0 rounded-md border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition"
-                th:text="#{view.common.delete}">
-            삭제
-        </button>
     </div>
 </div>
 
@@ -201,18 +194,25 @@
         </div>
     </div>
 
-    <div class="flex flex-nowrap justify-start gap-2 overflow-x-auto md:justify-end">
+    <div class="flex flex-wrap gap-2 items-center md:justify-end">
+        <button type="button"
+                th:attr="hx-delete=@{/stocks/{id}(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId},hx-confirm=#{view.stock.detail.deleteConfirm(${stock.itemName})}"
+                hx-swap="outerHTML"
+                class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition md:order-last"
+                th:text="#{view.common.delete}">
+            삭제
+        </button>
         <button type="button"
                 th:attr="hx-put=@{/stocks/{id}(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId},hx-include='#stock-' + ${stock.externalId}"
                 hx-swap="outerHTML"
-                class="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
+                class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
                 th:text="#{view.common.save}">
             저장
         </button>
         <button type="button"
                 th:attr="hx-get=@{/stocks/{id}/cancel(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId}"
                 hx-swap="outerHTML"
-                class="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 th:text="#{view.common.cancel}">
             취소
         </button>
