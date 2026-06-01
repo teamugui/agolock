@@ -1,5 +1,6 @@
 package com.seu.seustock.model.dto;
 
+import com.seu.seustock.model.enumeration.TrackingMode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -18,6 +19,18 @@ public class ItemDTO {
     private String name;
     private String description;
     private BigDecimal price;
+    private TrackingMode serialMode = TrackingMode.NONE;
+    private String serialPrefix;
+    private int serialPaddingLength;
+    private int serialIncrementUnit = 1;
+    private long serialNextSequence;
+    private TrackingMode lotMode = TrackingMode.NONE;
+    private String lotVendorCode;
+    private String lotDateFormat = "yyyyMMdd";
+    private boolean lotIncludeSequence = true;
+    private String lotSequenceKey;
+    private int lotNextSequence;
+    private Integer expirationPeriodDays;
     private boolean active;
     private UUID primaryImageExternalId;
     private LocalDateTime createdAt;

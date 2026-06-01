@@ -4,6 +4,7 @@ import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.UserDTO;
+import com.seu.seustock.model.enumeration.TrackingMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -199,6 +200,41 @@ class ItemMapperTest {
 
         assertThat(itemMapper.findById(item.getId()).orElseThrow().getPrice())
                 .isEqualByComparingTo("1200000");
+    }
+
+    @Test
+    void insertAndUpdateItem_persistsSerialLotPolicyColumns() {
+        ItemDTO item = buildItem("정책 품목", null);
+        item.setSerialMode(TrackingMode.AUTO);
+        item.setSerialPrefix("SEU-");
+        item.setSerialPaddingLength(4);
+        item.setSerialIncrementUnit(2);
+        item.setSerialNextSequence(10);
+        item.setLotMode(TrackingMode.MANUAL);
+        item.setLotVendorCode("VN-");
+        item.setLotDateFormat("yyyyMMdd");
+        item.setLotIncludeSequence(true);
+        item.setLotNextSequence(3);
+        item.setExpirationPeriodDays(90);
+        itemMapper.insertItem(item);
+
+        ItemDTO found = itemMapper.findById(item.getId()).orElseThrow();
+        assertThat(found.getSerialMode()).isEqualTo(TrackingMode.AUTO);
+        assertThat(found.getSerialPrefix()).isEqualTo("SEU-");
+        assertThat(found.getSerialPaddingLength()).isEqualTo(4);
+        assertThat(found.getSerialIncrementUnit()).isEqualTo(2);
+        assertThat(found.getSerialNextSequence()).isEqualTo(10);
+        assertThat(found.getLotMode()).isEqualTo(TrackingMode.MANUAL);
+        assertThat(found.getLotVendorCode()).isEqualTo("VN-");
+        assertThat(found.getExpirationPeriodDays()).isEqualTo(90);
+
+        itemMapper.updateSerialNextSequence(item.getId(), 14);
+        itemMapper.updateLotSequence(item.getId(), "20260531", 4);
+
+        ItemDTO updated = itemMapper.findById(item.getId()).orElseThrow();
+        assertThat(updated.getSerialNextSequence()).isEqualTo(14);
+        assertThat(updated.getLotSequenceKey()).isEqualTo("20260531");
+        assertThat(updated.getLotNextSequence()).isEqualTo(4);
     }
 
     @Test

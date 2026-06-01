@@ -32,6 +32,8 @@ public class StockForm {
 
     private String serialNumber;
 
+    private String serialNumbersText;
+
     private String lotNumber;
 
     private LocalDate expirationDate;

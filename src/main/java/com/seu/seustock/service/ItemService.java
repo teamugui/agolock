@@ -10,6 +10,7 @@ import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.ItemSpaceStockDTO;
 import com.seu.seustock.model.dto.ItemTransactionHistoryDTO;
 import com.seu.seustock.model.dto.UserDTO;
+import com.seu.seustock.model.enumeration.TrackingMode;
 import com.seu.seustock.model.form.ItemForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
@@ -74,6 +75,7 @@ public class ItemService {
         item.setName(form.getName());
         item.setDescription(form.getDescription());
         item.setPrice(form.getPrice());
+        applyPolicy(item, form);
         itemMapper.insertItem(item);
         attachPrimaryImageIfPresent(item.getId(), user, form);
         log.info("item created userId={} itemId={}", user.getId(), item.getId());
@@ -87,6 +89,7 @@ public class ItemService {
         item.setName(form.getName());
         item.setDescription(form.getDescription());
         item.setPrice(form.getPrice());
+        applyPolicy(item, form);
         itemMapper.updateItem(item);
         attachPrimaryImageIfPresent(item.getId(), getUser(username), form);
         log.info("item updated userId={} itemId={}", getUser(username).getId(), item.getId());
@@ -166,5 +169,31 @@ public class ItemService {
         itemImageMapper.insertItemImage(itemId, image.getId(), 0, true);
         log.info("item primary image attached userId={} itemId={} imageId={}",
                 user.getId(), itemId, image.getId());
+    }
+
+    private void applyPolicy(ItemDTO item, ItemForm form) {
+        item.setSerialMode(form.getSerialMode() == null ? TrackingMode.NONE : form.getSerialMode());
+        item.setSerialPrefix(blankToNull(form.getSerialPrefix()));
+        item.setSerialPaddingLength(form.getSerialPaddingLength());
+        item.setSerialIncrementUnit(form.getSerialIncrementUnit());
+        item.setSerialNextSequence(form.getSerialNextSequence());
+        item.setLotMode(form.getLotMode() == null ? TrackingMode.NONE : form.getLotMode());
+        item.setLotVendorCode(blankToNull(form.getLotVendorCode()));
+        item.setLotDateFormat(blankToDefault(form.getLotDateFormat(), "yyyyMMdd"));
+        item.setLotIncludeSequence(form.isLotIncludeSequence());
+        item.setLotNextSequence(form.getLotNextSequence());
+        item.setExpirationPeriodDays(form.getExpirationPeriodDays());
+    }
+
+    private String blankToDefault(String value, String defaultValue) {
+        String normalized = blankToNull(value);
+        return normalized == null ? defaultValue : normalized;
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

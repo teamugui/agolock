@@ -22,6 +22,8 @@ public interface StockMapper {
     List<StockDTO> findByItemId(Long itemId);
     int countByItemId(Long itemId);
     int countInStockByItemId(Long itemId);
+    List<String> findExistingSerialNumbers(@Param("itemId") Long itemId,
+                                           @Param("serialNumbers") List<String> serialNumbers);
     List<StockDTO> findBySpaceId(Long spaceId);
     List<StockDTO> findByBoxId(Long boxId);
     List<StockDTO> findByShelfIdDirectOnly(Long shelfId);

@@ -4,6 +4,7 @@ import com.seu.seustock.model.enumeration.StockStatus;
 import com.seu.seustock.model.dto.BoxDTO;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ItemDTO;
+import com.seu.seustock.model.dto.ItemLotDTO;
 import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
@@ -55,6 +56,8 @@ class StockMapperTest {
 
     @Autowired
     private ItemImageMapper itemImageMapper;
+    @Autowired
+    private ItemLotMapper itemLotMapper;
 
     private Long itemId;
     private Long spaceId;
@@ -137,6 +140,26 @@ class StockMapperTest {
         assertThat(found.get().getStatus()).isEqualTo(StockStatus.IN_STOCK);
         assertThat(found.get().getSerialNumber()).isEqualTo("SN-001");
         assertThat(found.get().getMemo()).isEqualTo("보관함 상단에 라벨 부착");
+    }
+
+    @Test
+    void insertStock_persistsLotIdAndDetailUsesJoinedLotNumber() {
+        ItemLotDTO lot = new ItemLotDTO();
+        lot.setItemId(itemId);
+        lot.setLotNumber("JOIN-LOT");
+        itemLotMapper.insertLot(lot);
+        StockDTO stock = buildStock();
+        stock.setLotId(lot.getId());
+        stock.setLotNumber("LEGACY-LOT");
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        StockDTO found = stockMapper.findById(stock.getId()).orElseThrow();
+        StockDetailDTO detail = stockMapper.findDetailByExternalId(externalId, userId).orElseThrow();
+
+        assertThat(found.getLotId()).isEqualTo(lot.getId());
+        assertThat(detail.getLotExternalId()).isNotNull();
+        assertThat(detail.getLotNumber()).isEqualTo("JOIN-LOT");
     }
 
     @Test

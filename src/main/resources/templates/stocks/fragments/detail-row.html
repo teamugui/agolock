@@ -34,7 +34,14 @@
         </p>
         <p class="mt-0.5">
             <span class="text-xs text-slate-400">LOT</span>
-            <span th:text="${stock.lotNumber != null and !stock.lotNumber.isEmpty()} ? ${stock.lotNumber} : '-'"></span>
+            <button th:if="${stock.lotExternalId != null}"
+                    type="button"
+                    th:attr="hx-get=@{/lots/{id}(id=${stock.lotExternalId})}"
+                    hx-target="#modal"
+                    class="font-medium text-blue-700 hover:underline"
+                    th:text="${stock.lotNumber}">LOT</button>
+            <span th:unless="${stock.lotExternalId != null}"
+                  th:text="${stock.lotNumber != null and !stock.lotNumber.isEmpty()} ? ${stock.lotNumber} : '-'"></span>
         </p>
         <p class="mt-0.5" th:if="${stock.price != null}">
             <span class="text-xs text-slate-400" th:text="#{view.stock.form.price.label}">가격</span>
@@ -144,6 +151,8 @@
         <div>
             <label class="mb-1 block text-xs font-medium text-slate-500" th:text="#{view.stock.form.lot.label}">로트 번호</label>
             <input type="text" th:field="*{lotNumber}"
+                   th:readonly="${stock.lotExternalId != null}"
+                   th:classappend="${stock.lotExternalId != null} ? 'bg-slate-100 text-slate-500'"
                    class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <p th:if="${#fields.hasErrors('lotNumber')}" th:errors="*{lotNumber}"
                class="mt-1 text-xs text-red-500"></p>

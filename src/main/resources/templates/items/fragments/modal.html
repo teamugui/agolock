@@ -88,6 +88,49 @@
                       class="mt-1 block text-xs text-red-500"></span>
             </div>
 
+            <details class="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <summary class="cursor-pointer text-sm font-semibold text-slate-700" th:text="#{view.item.policy.section}">시리얼/로트 정책</summary>
+                <div class="mt-3 space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1" th:text="#{view.item.policy.serialMode}">시리얼 모드</label>
+                        <select th:field="*{serialMode}"
+                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+                            <option value="NONE" th:text="#{enum.TrackingMode.NONE}">없음</option>
+                            <option value="AUTO" th:text="#{enum.TrackingMode.AUTO}">자동</option>
+                            <option value="MANUAL" th:text="#{enum.TrackingMode.MANUAL}">수동</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input type="text" th:field="*{serialPrefix}" th:placeholder="#{view.item.policy.serialPrefix}"
+                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                        <input type="number" min="0" th:field="*{serialPaddingLength}" th:placeholder="#{view.item.policy.serialPadding}"
+                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                        <input type="number" min="0" th:field="*{serialNextSequence}" th:placeholder="#{view.item.policy.serialNext}"
+                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <input type="hidden" th:field="*{serialIncrementUnit}" value="1">
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1" th:text="#{view.item.policy.lotMode}">로트 모드</label>
+                        <select th:field="*{lotMode}"
+                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+                            <option value="NONE" th:text="#{enum.TrackingMode.NONE}">없음</option>
+                            <option value="AUTO" th:text="#{enum.TrackingMode.AUTO}">자동</option>
+                            <option value="MANUAL" th:text="#{enum.TrackingMode.MANUAL}">수동</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" th:field="*{lotVendorCode}" th:placeholder="#{view.item.policy.lotVendorCode}"
+                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                        <input type="number" min="1" th:field="*{expirationPeriodDays}" th:placeholder="#{view.item.policy.expirationDays}"
+                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <input type="hidden" th:field="*{lotDateFormat}" value="yyyyMMdd">
+                    <input type="hidden" th:field="*{lotIncludeSequence}" value="true">
+                    <input type="hidden" th:field="*{lotNextSequence}" value="0">
+                </div>
+            </details>
+
             <input type="hidden" th:field="*{imageHash}" id="item-modal-image-hash">
 
             <div class="flex gap-2 justify-end">

@@ -2,6 +2,7 @@ package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.*;
 import com.seu.seustock.model.enumeration.StockStatus;
+import com.seu.seustock.model.enumeration.TrackingMode;
 import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.StockTransactionDTO;
@@ -17,10 +18,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -54,6 +60,8 @@ class StockServiceTest {
     @Mock
     private ItemMapper itemMapper;
     @Mock
+    private ItemLotMapper itemLotMapper;
+    @Mock
     private ItemImageMapper itemImageMapper;
     @Mock
     private SpaceMapper spaceMapper;
@@ -67,6 +75,12 @@ class StockServiceTest {
     private ImageStorageService imageStorageService;
     @Mock
     private MessageSource messageSource;
+    @Spy
+    private SerialNumberGenerator serialNumberGenerator = new SerialNumberGenerator();
+    @Spy
+    private LotNumberGenerator lotNumberGenerator = new LotNumberGenerator();
+    @Spy
+    private Clock clock = Clock.fixed(Instant.parse("2026-05-31T00:00:00Z"), ZoneId.systemDefault());
 
     @InjectMocks
     private StockService stockService;
@@ -85,6 +99,7 @@ class StockServiceTest {
     void setUp() {
         lenient().when(messageSource.getMessage(anyString(), any(), any()))
                 .thenAnswer(invocation -> switch ((String) invocation.getArgument(0)) {
+                    case "stock.memo.initial" -> "초기 등록";
                     case "stock.memo.quick" -> "빠른 등록";
                     case "enum.TransactionMemoMaster.PURCHASE_IN" -> "구매 입고";
                     case "enum.TransactionMemoMaster.RETURN_IN" -> "반품 입고";
@@ -275,7 +290,109 @@ class StockServiceTest {
         stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME);
 
         verify(stockMapper).insertStocks(anyList());
-        verify(transactionMapper).insertTransactions(anyList());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockTransactionDTO>> txCaptor = ArgumentCaptor.forClass(List.class);
+        verify(transactionMapper).insertTransactions(txCaptor.capture());
+        assertThat(txCaptor.getValue()).hasSize(1);
+        assertThat(txCaptor.getValue().get(0).getMemo()).isEqualTo("초기 등록");
+    }
+
+    @Test
+    void create_generatesAutoSerialsAndLot() {
+        item.setSerialMode(TrackingMode.AUTO);
+        item.setSerialPrefix("SEU-");
+        item.setSerialPaddingLength(4);
+        item.setSerialIncrementUnit(1);
+        item.setSerialNextSequence(0);
+        item.setLotMode(TrackingMode.AUTO);
+        item.setLotDateFormat("yyyyMMdd");
+        item.setLotIncludeSequence(true);
+        item.setExpirationPeriodDays(30);
+        StockForm form = stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null);
+        form.setCount(3);
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(stockMapper.findExistingSerialNumbers(eq(item.getId()), anyList())).thenReturn(List.of());
+        when(itemLotMapper.findByItemIdAndLotNumber(item.getId(), "20260531-001")).thenReturn(Optional.empty());
+        doAnswer(invocation -> {
+            ItemLotDTO lot = invocation.getArgument(0);
+            lot.setId(900L);
+            return null;
+        }).when(itemLotMapper).insertLot(any());
+        when(itemLotMapper.findById(900L)).thenAnswer(invocation -> {
+            ItemLotDTO lot = new ItemLotDTO();
+            lot.setId(900L);
+            lot.setItemId(item.getId());
+            lot.setLotNumber("20260531-001");
+            lot.setExpirationDate(LocalDate.of(2026, 6, 30));
+            return Optional.of(lot);
+        });
+        doAnswer(invocation -> {
+            List<StockDTO> stocks = invocation.getArgument(0);
+            long id = 500L;
+            for (StockDTO stock : stocks) {
+                stock.setId(++id);
+            }
+            return null;
+        }).when(stockMapper).insertStocks(anyList());
+
+        stockService.create(form, USERNAME);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(captor.capture());
+        assertThat(captor.getValue()).extracting(StockDTO::getSerialNumber)
+                .containsExactly("SEU-0001", "SEU-0002", "SEU-0003");
+        assertThat(captor.getValue()).allSatisfy(stock -> {
+            assertThat(stock.getLotId()).isEqualTo(900L);
+            assertThat(stock.getLotNumber()).isEqualTo("20260531-001");
+            assertThat(stock.getExpirationDate()).isEqualTo(LocalDate.of(2026, 6, 30));
+        });
+        verify(itemMapper).updateSerialNextSequence(item.getId(), 3);
+        verify(itemMapper).updateLotSequence(item.getId(), "20260531", 1);
+    }
+
+    @Test
+    void addUnits_manualSerialsOverrideCountAndManualLotReusesExistingLot() {
+        item.setSerialMode(TrackingMode.MANUAL);
+        item.setLotMode(TrackingMode.MANUAL);
+        ItemLotDTO existingLot = new ItemLotDTO();
+        existingLot.setId(901L);
+        existingLot.setLotNumber("LOT-A");
+        existingLot.setExpirationDate(LocalDate.of(2026, 12, 31));
+        StockInOutForm form = stockInOutForm(SPACE_EXTERNAL_ID, null, null);
+        form.setCount(1);
+        form.setSerialNumbersText("SN-1\nSN-2\n");
+        form.setLotNumber("LOT-A");
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(stockMapper.findExistingSerialNumbers(eq(item.getId()), anyList())).thenReturn(List.of());
+        when(itemLotMapper.findByItemIdAndLotNumber(item.getId(), "LOT-A")).thenReturn(Optional.of(existingLot));
+
+        stockService.addUnits(form, USERNAME);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(captor.capture());
+        assertThat(captor.getValue()).hasSize(2);
+        assertThat(captor.getValue()).extracting(StockDTO::getSerialNumber).containsExactly("SN-1", "SN-2");
+        assertThat(captor.getValue()).allSatisfy(stock -> assertThat(stock.getLotId()).isEqualTo(901L));
+        verify(itemLotMapper, never()).insertLot(any());
+    }
+
+    @Test
+    void create_rejectsDuplicateManualSerials() {
+        item.setSerialMode(TrackingMode.MANUAL);
+        StockForm form = stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null);
+        form.setSerialNumbersText("SN-1\nSN-1");
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+
+        assertThatThrownBy(() -> stockService.create(form, USERNAME))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("error.serial.duplicate");
+
+        verify(stockMapper, never()).insertStocks(any());
     }
 
     @Test

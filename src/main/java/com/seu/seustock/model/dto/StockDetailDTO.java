@@ -24,6 +24,7 @@ public class StockDetailDTO {
     private String shelfName;
     private UUID boxExternalId;
     private String boxName;
+    private UUID lotExternalId;
     private String serialNumber;
     private String lotNumber;
     private LocalDate expirationDate;

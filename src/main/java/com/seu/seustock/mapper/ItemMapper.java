@@ -22,6 +22,11 @@ public interface ItemMapper {
     int countByUserIdWithOptions(@Param("userId") Long userId,
                                  @Param("keyword") String keyword);
     void updateItem(ItemDTO item);
+    void updateSerialNextSequence(@Param("id") Long id,
+                                  @Param("serialNextSequence") long serialNextSequence);
+    void updateLotSequence(@Param("id") Long id,
+                           @Param("lotSequenceKey") String lotSequenceKey,
+                           @Param("lotNextSequence") int lotNextSequence);
     void deactivateById(Long id);
     void deleteById(Long id);
 }

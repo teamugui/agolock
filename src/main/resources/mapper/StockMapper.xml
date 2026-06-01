@@ -24,6 +24,7 @@
         <result property="spaceId"        column="space_id"/>
         <result property="shelfId"        column="shelf_id"/>
         <result property="boxId"          column="box_id"/>
+        <result property="lotId"          column="lot_id"/>
         <result property="serialNumber"   column="serial_number"/>
         <result property="lotNumber"      column="lot_number"/>
         <result property="expirationDate" column="expiration_date"/>
@@ -45,6 +46,7 @@
         <result property="shelfName"               column="shelf_name"/>
         <result property="boxExternalId"           column="box_external_id"/>
         <result property="boxName"                 column="box_name"/>
+        <result property="lotExternalId"           column="lot_external_id"/>
         <result property="serialNumber"            column="serial_number"/>
         <result property="lotNumber"               column="lot_number"/>
         <result property="expirationDate"          column="expiration_date"/>
@@ -57,43 +59,43 @@
 
     <insert id="insertStock" parameterType="StockDTO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, serial_number, lot_number, expiration_date, memo, price, status)
-        VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{serialNumber}, #{lotNumber}, #{expirationDate}, #{memo}, #{price}, 'IN_STOCK')
+        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, lot_id, serial_number, lot_number, expiration_date, memo, price, status)
+        VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{lotId}, #{serialNumber}, #{lotNumber}, #{expirationDate}, #{memo}, #{price}, 'IN_STOCK')
     </insert>
 
     <insert id="insertStocks" parameterType="list"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, serial_number, lot_number, expiration_date, memo, price, status)
+        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, lot_id, serial_number, lot_number, expiration_date, memo, price, status)
         VALUES
         <foreach collection="list" item="s" separator=",">
             (#{s.itemId}, #{s.spaceId}, #{s.shelfId}, #{s.boxId},
-             #{s.serialNumber}, #{s.lotNumber}, #{s.expirationDate}, #{s.memo}, #{s.price}, 'IN_STOCK')
+             #{s.lotId}, #{s.serialNumber}, #{s.lotNumber}, #{s.expirationDate}, #{s.memo}, #{s.price}, 'IN_STOCK')
         </foreach>
     </insert>
 
     <select id="findById" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE id = #{id}
     </select>
 
     <select id="findByExternalId" parameterType="java.util.UUID" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE external_id = #{externalId}
     </select>
 
     <select id="findByBoxId" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE box_id = #{boxId}
     </select>
 
     <select id="findByShelfIdDirectOnly" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE shelf_id = #{shelfId}
@@ -101,7 +103,7 @@
     </select>
 
     <select id="findBySpaceIdDirectOnly" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
@@ -109,7 +111,7 @@
     </select>
 
     <select id="findByItemId" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE item_id = #{itemId}
@@ -128,15 +130,25 @@
           AND status = 'IN_STOCK'
     </select>
 
+    <select id="findExistingSerialNumbers" resultType="string">
+        SELECT serial_number
+        FROM stocks
+        WHERE item_id = #{itemId}
+          AND serial_number IN
+          <foreach collection="serialNumbers" item="serialNumber" open="(" separator="," close=")">
+              #{serialNumber}
+          </foreach>
+    </select>
+
     <select id="findBySpaceId" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
     </select>
 
     <select id="findInStockByItemAndBox" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE item_id = #{itemId}
@@ -146,7 +158,7 @@
     </select>
 
     <select id="findInStockByItemAndShelf" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
@@ -157,7 +169,7 @@
     </select>
 
     <select id="findInStockByItemAndSpace" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
@@ -168,7 +180,7 @@
     </select>
 
     <select id="findDispatchableByItemAndBox" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE item_id = #{itemId}
@@ -179,7 +191,7 @@
     </select>
 
     <select id="findDispatchableByItemAndShelf" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
@@ -191,7 +203,7 @@
     </select>
 
     <select id="findDispatchableByItemAndSpace" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, lot_id,
                serial_number, lot_number, expiration_date, memo, status, is_kept, price, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
@@ -317,8 +329,9 @@
                sh.name AS shelf_name,
                b.external_id AS box_external_id,
                b.name AS box_name,
+               il.external_id AS lot_external_id,
                s.serial_number,
-               s.lot_number,
+               COALESCE(il.lot_number, s.lot_number) AS lot_number,
                s.expiration_date,
                s.memo,
                s.status,
@@ -330,6 +343,7 @@
         JOIN spaces sp ON s.space_id = sp.id
         LEFT JOIN shelves sh ON s.shelf_id = sh.id
         LEFT JOIN boxes b ON s.box_id = b.id
+        LEFT JOIN item_lots il ON s.lot_id = il.id
     </sql>
 
     <select id="searchDetails" resultMap="StockDetailResultMap">
@@ -352,7 +366,7 @@
           AND (
               i.name LIKE CONCAT('%', #{keyword}, '%')
               OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
-              OR s.lot_number LIKE CONCAT('%', #{keyword}, '%')
+              OR COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
               OR s.memo LIKE CONCAT('%', #{keyword}, '%')
           )
         </if>
@@ -378,6 +392,7 @@
         JOIN spaces sp ON s.space_id = sp.id
         LEFT JOIN shelves sh ON s.shelf_id = sh.id
         LEFT JOIN boxes b ON s.box_id = b.id
+        LEFT JOIN item_lots il ON s.lot_id = il.id
         WHERE i.user_id = #{userId}
           AND s.status = 'IN_STOCK'
         <if test="itemExternalId != null">
@@ -396,7 +411,7 @@
           AND (
               i.name LIKE CONCAT('%', #{keyword}, '%')
               OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
-              OR s.lot_number LIKE CONCAT('%', #{keyword}, '%')
+              OR COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
               OR s.memo LIKE CONCAT('%', #{keyword}, '%')
           )
         </if>

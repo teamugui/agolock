@@ -421,7 +421,9 @@ public class StockController {
         form.setSpaceExternalId(spaceExternalId);
         form.setShelfExternalId(shelfExternalId);
         form.setBoxExternalId(boxExternalId);
-        form.setPrice(itemService.findByExternalId(itemExternalId, principal.getName()).getPrice());
+        var item = itemService.findByExternalId(itemExternalId, principal.getName());
+        form.setPrice(item.getPrice());
+        model.addAttribute("item", item);
         model.addAttribute("form", form);
         return "stocks/fragments/in-modal :: modal";
     }
@@ -436,6 +438,7 @@ public class StockController {
             log.warn("request validation failed operation=stock.in itemExternalId={} spaceExternalId={} shelfExternalId={} boxExternalId={} errorCount={} fields={}",
                     form.getItemExternalId(), form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
                     result.getErrorCount(), ControllerLogSupport.invalidFields(result));
+            model.addAttribute("item", itemService.findByExternalId(form.getItemExternalId(), principal.getName()));
             return "stocks/fragments/in-modal :: modal";
         }
         String username = principal.getName();
