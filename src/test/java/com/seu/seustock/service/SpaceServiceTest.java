@@ -4,6 +4,7 @@ import com.seu.seustock.mapper.SpaceMapper;
 import com.seu.seustock.mapper.StockMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.SpaceDTO;
+import com.seu.seustock.model.dto.SpaceSummaryDTO;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.SpaceForm;
@@ -15,8 +16,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,6 +53,7 @@ class SpaceServiceTest {
     void setUp() {
         lenient().when(messageSource.getMessage(anyString(), any(), any()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        ReflectionTestUtils.setField(spaceService, "expiringSoonDays", 7);
     }
 
     @Test
@@ -242,5 +247,56 @@ class SpaceServiceTest {
         SpaceDTO result = spaceService.findByExternalId(SPACE_EXTERNAL_ID, USERNAME);
 
         assertThat(result).isSameAs(space);
+    }
+
+    // ── findSummariesByExternalId ──────────────────────────────────────────────
+
+    @Test
+    void findSummaries_emptyList_returnsEmptyMapWithoutQuery() {
+        Map<UUID, SpaceSummaryDTO> result = spaceService.findSummariesByExternalId(List.of());
+
+        assertThat(result).isEmpty();
+        verifyNoInteractions(spaceMapper);
+    }
+
+    @Test
+    void findSummaries_keysBySpaceExternalId() {
+        SpaceDTO s1 = new SpaceDTO();
+        s1.setId(10L);
+        s1.setExternalId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        SpaceDTO s2 = new SpaceDTO();
+        s2.setId(20L);
+        s2.setExternalId(UUID.fromString("00000000-0000-0000-0000-000000000002"));
+
+        SpaceSummaryDTO sum1 = new SpaceSummaryDTO();
+        sum1.setSpaceExternalId(s1.getExternalId());
+        sum1.setStockCount(5);
+        SpaceSummaryDTO sum2 = new SpaceSummaryDTO();
+        sum2.setSpaceExternalId(s2.getExternalId());
+        sum2.setStockCount(9);
+
+        when(spaceMapper.findSummariesBySpaceIds(eq(List.of(10L, 20L)), any(), any()))
+                .thenReturn(List.of(sum1, sum2));
+
+        Map<UUID, SpaceSummaryDTO> result = spaceService.findSummariesByExternalId(List.of(s1, s2));
+
+        assertThat(result).containsOnlyKeys(s1.getExternalId(), s2.getExternalId());
+        assertThat(result.get(s1.getExternalId()).getStockCount()).isEqualTo(5);
+        assertThat(result.get(s2.getExternalId()).getStockCount()).isEqualTo(9);
+    }
+
+    @Test
+    void findSummaries_passesSoonCutoffAsTodayPlusConfiguredDays() {
+        SpaceDTO s1 = new SpaceDTO();
+        s1.setId(10L);
+        s1.setExternalId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        when(spaceMapper.findSummariesBySpaceIds(any(), any(), any())).thenReturn(List.of());
+
+        spaceService.findSummariesByExternalId(List.of(s1));
+
+        ArgumentCaptor<LocalDate> today = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> soonCutoff = ArgumentCaptor.forClass(LocalDate.class);
+        verify(spaceMapper).findSummariesBySpaceIds(eq(List.of(10L)), today.capture(), soonCutoff.capture());
+        assertThat(soonCutoff.getValue()).isEqualTo(today.getValue().plusDays(7));
     }
 }

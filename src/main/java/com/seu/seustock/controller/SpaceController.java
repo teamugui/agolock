@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -47,6 +48,7 @@ public class SpaceController {
         model.addAttribute("form", new SpaceForm());
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
+        addSummaries(model, spacesPage.content());
         if (append) {
             return "spaces/fragments/list-response :: space-more-response";
         }
@@ -83,6 +85,7 @@ public class SpaceController {
             model.addAttribute("page", spacesPage);
             model.addAttribute("keyword", keyword);
             model.addAttribute("sortBy", sortBy);
+            addSummaries(model, spacesPage.content());
             return "spaces/list";
         }
         spaceService.create(username, form);
@@ -116,6 +119,7 @@ public class SpaceController {
         }
         SpaceDTO updated = spaceService.update(externalId, form, username);
         model.addAttribute("space", updated);
+        addSummaries(model, List.of(updated));
         HtmxResponse.success(response, getMsg("toast.space.updated"));
         return "spaces/fragments/row :: view";
     }
@@ -123,7 +127,9 @@ public class SpaceController {
     @GetMapping("/{externalId}/cancel")
     public String cancelEdit(@PathVariable UUID externalId, Principal principal, Model model) {
         String username = principal.getName();
-        model.addAttribute("space", spaceService.findByExternalId(externalId, username));
+        SpaceDTO space = spaceService.findByExternalId(externalId, username);
+        model.addAttribute("space", space);
+        addSummaries(model, List.of(space));
         return "spaces/fragments/row :: view";
     }
 
@@ -142,7 +148,13 @@ public class SpaceController {
         model.addAttribute("page", spacesPage);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
+        addSummaries(model, spacesPage.content());
         HtmxResponse.success(response, getMsg("toast.space.deleted"));
         return "spaces/list :: space-list-section";
+    }
+
+    /** Attach the per-space summary map for any path that renders {@code spaces/fragments/row :: view}. */
+    private void addSummaries(Model model, List<SpaceDTO> spaces) {
+        model.addAttribute("summaries", spaceService.findSummariesByExternalId(spaces));
     }
 }

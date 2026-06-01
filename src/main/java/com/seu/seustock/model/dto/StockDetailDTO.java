@@ -32,5 +32,6 @@ public class StockDetailDTO {
     private StockStatus status;
     private boolean kept;
     private BigDecimal price;
+    private BigDecimal itemPrice;
     private LocalDateTime createdAt;
 }

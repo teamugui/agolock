@@ -54,6 +54,7 @@
         <result property="status"                  column="status"/>
         <result property="kept"                    column="is_kept"/>
         <result property="price"                   column="price"/>
+        <result property="itemPrice"               column="item_price"/>
         <result property="createdAt"               column="created_at"/>
     </resultMap>
 
@@ -337,6 +338,7 @@
                s.status,
                s.is_kept,
                s.price,
+               i.price AS item_price,
                s.created_at
         FROM stocks s
         JOIN items i ON s.item_id = i.id

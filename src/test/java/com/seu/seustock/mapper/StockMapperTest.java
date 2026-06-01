@@ -725,14 +725,19 @@ class StockMapperTest {
     }
 
     @Test
-    void searchDetails_returnsPrice() {
+    void searchDetails_returnsPrices() {
         StockDTO stock = buildStock();
-        stock.setPrice(new BigDecimal("5000"));
+        stock.setPrice(null); // 상속
         stockMapper.insertStock(stock);
+
+        ItemDTO item = itemMapper.findById(itemId).orElseThrow();
+        item.setPrice(new BigDecimal("9900"));
+        itemMapper.updateItem(item);
 
         List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null, 10, 0);
 
         assertThat(details).hasSize(1);
-        assertThat(details.get(0).getPrice()).isEqualByComparingTo("5000");
+        assertThat(details.get(0).getPrice()).isNull();
+        assertThat(details.get(0).getItemPrice()).isEqualByComparingTo("9900");
     }
 }

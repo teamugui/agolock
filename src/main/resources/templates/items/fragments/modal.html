@@ -94,7 +94,7 @@
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1" th:text="#{view.item.policy.serialMode}">시리얼 모드</label>
                         <select th:field="*{serialMode}"
-                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                             <option value="NONE" th:text="#{enum.TrackingMode.NONE}">없음</option>
                             <option value="AUTO" th:text="#{enum.TrackingMode.AUTO}">자동</option>
                             <option value="MANUAL" th:text="#{enum.TrackingMode.MANUAL}">수동</option>
@@ -102,18 +102,18 @@
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <input type="text" th:field="*{serialPrefix}" th:placeholder="#{view.item.policy.serialPrefix}"
-                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                         <input type="number" min="0" th:field="*{serialPaddingLength}" th:placeholder="#{view.item.policy.serialPadding}"
-                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                         <input type="number" min="0" th:field="*{serialNextSequence}" th:placeholder="#{view.item.policy.serialNext}"
-                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                     </div>
                     <input type="hidden" th:field="*{serialIncrementUnit}" value="1">
 
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1" th:text="#{view.item.policy.lotMode}">로트 모드</label>
                         <select th:field="*{lotMode}"
-                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                             <option value="NONE" th:text="#{enum.TrackingMode.NONE}">없음</option>
                             <option value="AUTO" th:text="#{enum.TrackingMode.AUTO}">자동</option>
                             <option value="MANUAL" th:text="#{enum.TrackingMode.MANUAL}">수동</option>
@@ -121,9 +121,9 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <input type="text" th:field="*{lotVendorCode}" th:placeholder="#{view.item.policy.lotVendorCode}"
-                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                         <input type="number" min="1" th:field="*{expirationPeriodDays}" th:placeholder="#{view.item.policy.expirationDays}"
-                               class="rounded-md border border-slate-300 px-3 py-2 text-sm">
+                               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
                     </div>
                     <input type="hidden" th:field="*{lotDateFormat}" value="yyyyMMdd">
                     <input type="hidden" th:field="*{lotIncludeSequence}" value="true">
@@ -173,6 +173,43 @@
         labelTextSelector:  '#item-modal-image-label-text',
         onImageReady: analyzeItemModalImage
     });
+
+    (function initTrackingModeToggles() {
+        const modal = document.getElementById('modal');
+        if (!modal) return;
+        const serialMode = modal.querySelector('[name="serialMode"]');
+        const serialPrefix = modal.querySelector('[name="serialPrefix"]');
+        const serialPadding = modal.querySelector('[name="serialPaddingLength"]');
+        const serialNext = modal.querySelector('[name="serialNextSequence"]');
+
+        const lotMode = modal.querySelector('[name="lotMode"]');
+        const lotVendor = modal.querySelector('[name="lotVendorCode"]');
+        const lotExp = modal.querySelector('[name="expirationPeriodDays"]');
+
+        function updateSerial() {
+            if (!serialMode) return;
+            const isAuto = serialMode.value === 'AUTO';
+            if (serialPrefix) serialPrefix.disabled = !isAuto;
+            if (serialPadding) serialPadding.disabled = !isAuto;
+            if (serialNext) serialNext.disabled = !isAuto;
+        }
+
+        function updateLot() {
+            if (!lotMode) return;
+            const isAuto = lotMode.value === 'AUTO';
+            if (lotVendor) lotVendor.disabled = !isAuto;
+            if (lotExp) lotExp.disabled = !isAuto;
+        }
+
+        if (serialMode) {
+            serialMode.addEventListener('change', updateSerial);
+            updateSerial();
+        }
+        if (lotMode) {
+            lotMode.addEventListener('change', updateLot);
+            updateLot();
+        }
+    })();
     </script>
 </div>
 

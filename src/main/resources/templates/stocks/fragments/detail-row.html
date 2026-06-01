@@ -43,9 +43,13 @@
             <span th:unless="${stock.lotExternalId != null}"
                   th:text="${stock.lotNumber != null and !stock.lotNumber.isEmpty()} ? ${stock.lotNumber} : '-'"></span>
         </p>
-        <p class="mt-0.5" th:if="${stock.price != null}">
+        <p class="mt-0.5" th:if="${stock.price != null or stock.itemPrice != null}">
             <span class="text-xs text-slate-400" th:text="#{view.stock.form.price.label}">가격</span>
-            <span th:text="#{view.common.price.format(${#numbers.formatInteger(stock.price, 1, 'COMMA')})}">5,000원</span>
+            <span th:if="${stock.price != null}" th:text="#{view.common.price.format(${#numbers.formatInteger(stock.price, 1, 'COMMA')})}">5,000원</span>
+            <span th:unless="${stock.price != null}" class="text-slate-500">
+                <span th:text="#{view.common.price.format(${#numbers.formatInteger(stock.itemPrice, 1, 'COMMA')})}">5,000원</span>
+                <span class="text-xs ml-0.5" th:text="#{view.stock.price.inherited}">(상속)</span>
+            </span>
         </p>
     </div>
 

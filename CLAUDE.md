@@ -174,7 +174,7 @@ Inventory model:
 - `images`: one row per uploaded file; deduplicated by `(user_id, content_hash)`.
 - `item_images` / `stock_images`: junction tables linking images to items or stocks.
 
-**Pricing semantics:** `stocks.price` is a **snapshot** copied from `items.price` at stock creation; editing an item's price is not retroactive (existing units keep their snapshot, and a unit's price can be edited individually). All prices are KRW integers (`NUMERIC(12,0)`, no decimals).
+**Pricing semantics:** The system uses an **inherited pricing** model. By default, `stocks.price` is left `NULL`, meaning the unit dynamically inherits the live price from its `items.price`. If a specific unit requires a different price (e.g., purchased at a discount), `stocks.price` can be explicitly set to override the inherited price. The effective price is calculated using `COALESCE(stocks.price, items.price)`. All prices are KRW integers (`NUMERIC(12,0)`, no decimals).
 
 **Stock-keep:** `is_kept` marks a unit as reserved/held. The partial index `idx_stocks_available` (`status = 'IN_STOCK' AND is_kept = FALSE`) backs "available stock" queries.
 

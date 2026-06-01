@@ -1,9 +1,11 @@
 package com.seu.seustock.mapper;
 
 import com.seu.seustock.model.dto.SpaceDTO;
+import com.seu.seustock.model.dto.SpaceSummaryDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,4 +25,8 @@ public interface SpaceMapper {
                                  @Param("keyword") String keyword);
     void updateSpace(SpaceDTO space);
     void deleteById(Long id);
+
+    List<SpaceSummaryDTO> findSummariesBySpaceIds(@Param("spaceIds") List<Long> spaceIds,
+                                                  @Param("today") LocalDate today,
+                                                  @Param("soonCutoff") LocalDate soonCutoff);
 }

@@ -406,7 +406,7 @@ class StockServiceTest {
     }
 
     @Test
-    void create_copiesItemPriceWhenFormPriceNull() {
+    void create_leavesPriceNullWhenFormPriceNull() {
         item.setPrice(new BigDecimal("5000"));
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
@@ -416,7 +416,7 @@ class StockServiceTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StockDTO>> captor = ArgumentCaptor.forClass(List.class);
         verify(stockMapper).insertStocks(captor.capture());
-        assertThat(captor.getValue().get(0).getPrice()).isEqualByComparingTo("5000");
+        assertThat(captor.getValue().get(0).getPrice()).isNull();
     }
 
     @Test
@@ -436,7 +436,7 @@ class StockServiceTest {
     }
 
     @Test
-    void addUnits_copiesItemPriceWhenFormPriceNull() {
+    void addUnits_leavesPriceNullWhenFormPriceNull() {
         item.setPrice(new BigDecimal("5000"));
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
@@ -446,7 +446,7 @@ class StockServiceTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StockDTO>> captor = ArgumentCaptor.forClass(List.class);
         verify(stockMapper).insertStocks(captor.capture());
-        assertThat(captor.getValue().get(0).getPrice()).isEqualByComparingTo("5000");
+        assertThat(captor.getValue().get(0).getPrice()).isNull();
     }
 
     @Test
@@ -823,7 +823,7 @@ class StockServiceTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StockDTO>> stockCaptor = ArgumentCaptor.forClass(List.class);
         verify(stockMapper).insertStocks(stockCaptor.capture());
-        assertThat(stockCaptor.getValue()).allSatisfy(s -> assertThat(s.getPrice()).isEqualByComparingTo("9000"));
+        assertThat(stockCaptor.getValue()).allSatisfy(s -> assertThat(s.getPrice()).isNull());
     }
 
     @Test

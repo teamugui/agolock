@@ -263,7 +263,7 @@ public class StockService {
                 form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), user);
 
         List<StockDTO> units = prepareInboundUnits(item, location,
-                new InboundSpec(form.getCount(), null, null, null, null, form.getPrice(), form.getMemo()));
+                new InboundSpec(form.getCount(), null, null, null, null, null, form.getMemo()));
 
         String memo = form.getMemo() != null ? form.getMemo() : getMsg("stock.memo.quick");
         insertInboundTransactions(units, memo);
@@ -585,7 +585,7 @@ public class StockService {
             unit.setLotNumber(lot.lotNumber());
             unit.setExpirationDate(lot.expirationDate());
             unit.setSerialNumber(serialNumbers.get(i));
-            unit.setPrice(spec.price() != null ? spec.price() : item.getPrice());
+            unit.setPrice(spec.price());
             unit.setMemo(spec.memo());
             units.add(unit);
         }

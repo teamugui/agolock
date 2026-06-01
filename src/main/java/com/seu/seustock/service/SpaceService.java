@@ -4,19 +4,25 @@ import com.seu.seustock.mapper.SpaceMapper;
 import com.seu.seustock.mapper.StockMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.SpaceDTO;
+import com.seu.seustock.model.dto.SpaceSummaryDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.SpaceForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,8 +34,27 @@ public class SpaceService {
     private final StockMapper stockMapper;
     private final MessageSource messageSource;
 
+    @Value("${seustock.space.expiring-soon-days:7}")
+    private int expiringSoonDays;
+
     private String getMsg(String key, Object... args) {
         return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+    }
+
+    /**
+     * Aggregate per-space summary metrics for the space-list strip, keyed by space external id.
+     * Returns an empty map for an empty input (avoids an empty SQL IN clause). The expiry window
+     * upper bound is {@code today + expiringSoonDays}.
+     */
+    public Map<UUID, SpaceSummaryDTO> findSummariesByExternalId(List<SpaceDTO> spaces) {
+        if (spaces.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> spaceIds = spaces.stream().map(SpaceDTO::getId).toList();
+        LocalDate today = LocalDate.now();
+        return spaceMapper.findSummariesBySpaceIds(spaceIds, today, today.plusDays(expiringSoonDays))
+                .stream()
+                .collect(Collectors.toMap(SpaceSummaryDTO::getSpaceExternalId, Function.identity()));
     }
 
     public List<SpaceDTO> findAllByUsername(String username) {
