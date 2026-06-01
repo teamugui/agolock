@@ -58,12 +58,14 @@ public class StockController {
                        @RequestParam(required = false) UUID shelfExternalId,
                        @RequestParam(required = false) UUID boxExternalId,
                        @RequestParam(required = false) String keyword,
+                       @RequestParam(required = false, defaultValue = "all") String searchType,
                        @RequestParam(required = false, defaultValue = "newest") String sortBy,
                        @RequestParam(required = false) Integer page,
                        Principal principal, Model model) {
         String username = principal.getName();
         var stocksPage = stockService.searchDetailsPage(
-                itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, keyword, sortBy, username, page);
+                itemExternalId, spaceExternalId, shelfExternalId, boxExternalId,
+                keyword, searchType, sortBy, username, page);
         model.addAttribute("stocks", stocksPage.content());
         model.addAttribute("page", stocksPage);
         model.addAttribute("itemExternalId", itemExternalId);
@@ -71,6 +73,7 @@ public class StockController {
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("searchType", searchType);
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("filtered", itemExternalId != null || spaceExternalId != null
                 || shelfExternalId != null || boxExternalId != null

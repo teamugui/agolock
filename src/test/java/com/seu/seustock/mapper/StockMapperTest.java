@@ -578,7 +578,7 @@ class StockMapperTest {
         stockMapper.insertStock(dispatched);
         stockMapper.updateStatusIfInStock(dispatched.getId(), StockStatus.DISPATCHED);
 
-        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null, 10, 0);
+        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null, null, 10, 0);
 
         assertThat(details).hasSize(1);
         assertThat(details.get(0).getExternalId()).isNotNull();
@@ -604,7 +604,7 @@ class StockMapperTest {
 
         List<StockDetailDTO> details = stockMapper.searchDetails(
                 userId, item.getExternalId(), space.getExternalId(), shelf.getExternalId(), box.getExternalId(),
-                null, null, 10, 0);
+                null, null, null, 10, 0);
 
         assertThat(details).hasSize(1);
         assertThat(details.get(0).getBoxName()).isEqualTo("1번박스");
@@ -635,16 +635,23 @@ class StockMapperTest {
         stockMapper.insertStock(keyboard);
 
         List<StockDetailDTO> lotMatched = stockMapper.searchDetails(
-                userId, null, null, null, null, "LOT-SEARCH", "newest", 10, 0);
+                userId, null, null, null, null, "LOT-SEARCH", null, "newest", 10, 0);
         List<StockDetailDTO> memoMatched = stockMapper.searchDetails(
-                userId, null, null, null, null, "회의실", "newest", 10, 0);
+                userId, null, null, null, null, "회의실", null, "newest", 10, 0);
+        List<StockDetailDTO> serialTypeMatched = stockMapper.searchDetails(
+                userId, null, null, null, null, "SN-001", "serial", "newest", 10, 0);
+        List<StockDetailDTO> itemTypeNotMatchedByLot = stockMapper.searchDetails(
+                userId, null, null, null, null, "LOT-SEARCH", "item", "newest", 10, 0);
         List<StockDetailDTO> nameSorted = stockMapper.searchDetails(
-                userId, null, null, null, null, null, "name", 10, 0);
+                userId, null, null, null, null, null, null, "name", 10, 0);
 
         assertThat(lotMatched).extracting(StockDetailDTO::getItemName).containsExactly("마우스");
         assertThat(memoMatched).extracting(StockDetailDTO::getItemName).containsExactly("키보드");
+        assertThat(serialTypeMatched).extracting(StockDetailDTO::getItemName).containsExactly("노트북");
+        assertThat(itemTypeNotMatchedByLot).isEmpty();
         assertThat(nameSorted).extracting(StockDetailDTO::getItemName).containsExactly("노트북", "마우스", "키보드");
-        assertThat(stockMapper.countSearchDetails(userId, null, null, null, null, "LOT-SEARCH")).isEqualTo(1);
+        assertThat(stockMapper.countSearchDetails(userId, null, null, null, null, "LOT-SEARCH", null)).isEqualTo(1);
+        assertThat(stockMapper.countSearchDetails(userId, null, null, null, null, "LOT-SEARCH", "item")).isZero();
     }
 
     @Test
@@ -734,7 +741,7 @@ class StockMapperTest {
         item.setPrice(new BigDecimal("9900"));
         itemMapper.updateItem(item);
 
-        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null, 10, 0);
+        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null, null, 10, 0);
 
         assertThat(details).hasSize(1);
         assertThat(details.get(0).getPrice()).isNull();

@@ -73,7 +73,7 @@ class StockControllerTest extends AbstractControllerTest {
     @BeforeEach
     void stubDefaults() {
         // 재고 상세 목록 (GET /stocks)
-        given(stockService.searchDetailsPage(any(), any(), any(), any(), any(), any(), anyString(), any()))
+        given(stockService.searchDetailsPage(any(), any(), any(), any(), any(), any(), any(), anyString(), any()))
                 .willReturn(new PageResult<>(List.of(), 1, 10, 0));
 
         // 단일 재고 상세 (editRow, cancelEdit, updateRow 오류 분기)

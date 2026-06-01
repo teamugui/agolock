@@ -366,10 +366,26 @@
         </if>
         <if test="keyword != null and keyword != ''">
           AND (
-              i.name LIKE CONCAT('%', #{keyword}, '%')
-              OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
-              OR COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
-              OR s.memo LIKE CONCAT('%', #{keyword}, '%')
+            <choose>
+                <when test="searchType == 'item'">
+                    i.name LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'serial'">
+                    s.serial_number LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'lot'">
+                    COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'memo'">
+                    s.memo LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    i.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
+                    OR COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
+                    OR s.memo LIKE CONCAT('%', #{keyword}, '%')
+                </otherwise>
+            </choose>
           )
         </if>
         ORDER BY
@@ -411,10 +427,26 @@
         </if>
         <if test="keyword != null and keyword != ''">
           AND (
-              i.name LIKE CONCAT('%', #{keyword}, '%')
-              OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
-              OR COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
-              OR s.memo LIKE CONCAT('%', #{keyword}, '%')
+            <choose>
+                <when test="searchType == 'item'">
+                    i.name LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'serial'">
+                    s.serial_number LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'lot'">
+                    COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'memo'">
+                    s.memo LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    i.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
+                    OR COALESCE(il.lot_number, s.lot_number) LIKE CONCAT('%', #{keyword}, '%')
+                    OR s.memo LIKE CONCAT('%', #{keyword}, '%')
+                </otherwise>
+            </choose>
           )
         </if>
     </select>

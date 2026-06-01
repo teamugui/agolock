@@ -32,7 +32,6 @@
                     <label th:each="item : ${items}"
                            class="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
                         <input type="radio" name="itemExternalId" th:value="${item.externalId}"
-                               th:attr="data-price=${item.price}"
                                th:data-serial-mode="${item.serialMode}"
                                th:data-lot-mode="${item.lotMode}"
                                class="text-blue-600 focus:ring-blue-500">
@@ -151,7 +150,6 @@
     (function () {
         var modal = document.getElementById('modal');
         if (!modal) return;
-        var priceInput = modal.querySelector('input[name="price"]');
         var countField = modal.querySelector('[data-count-field]');
         var serialSingleField = modal.querySelector('[data-serial-single-field]');
         var serialManualField = modal.querySelector('[data-serial-manual-field]');
@@ -166,10 +164,6 @@
         }
         modal.querySelectorAll('input[name="itemExternalId"]').forEach(function (radio) {
             radio.addEventListener('change', function () {
-                if (priceInput) {
-                    var p = radio.getAttribute('data-price');
-                    priceInput.value = (p != null && p !== '') ? p : '';
-                }
                 applyPolicy(radio);
             });
         });

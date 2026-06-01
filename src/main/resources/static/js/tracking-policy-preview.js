@@ -70,13 +70,10 @@
         var nextSequence = root.querySelector('[name="lotNextSequence"]');
         var sequenceKey = root.querySelector('[data-lot-sequence-key]');
         var preview = root.querySelector('[data-lot-preview]');
-        var expirationInput = root.querySelector('[name="expirationPeriodDays"]');
-        var expirationPreview = root.querySelector('[data-expiration-preview]');
         if (!mode || !preview) return;
 
         var isAuto = mode.value === 'AUTO';
         preview.classList.toggle('hidden', !isAuto);
-        if (expirationPreview) expirationPreview.classList.toggle('hidden', true);
         if (!isAuto) return;
 
         var todayKey = formatDate(new Date(), dateFormat && dateFormat.value);
@@ -91,9 +88,17 @@
         }
 
         preview.textContent = (preview.dataset.label || '') + ' ' + lotNumber;
+    }
+
+    function updateExpirationPreview(root) {
+        var expirationInput = root.querySelector('[name="expirationPeriodDays"]');
+        var expirationPreview = root.querySelector('[data-expiration-preview]');
+        if (!expirationPreview) return;
+
+        expirationPreview.classList.add('hidden');
 
         var expirationDays = parseInteger(expirationInput && expirationInput.value, 0);
-        if (expirationPreview && expirationDays >= 1) {
+        if (expirationDays >= 1) {
             var expirationDate = new Date();
             expirationDate.setDate(expirationDate.getDate() + expirationDays);
             expirationPreview.textContent = (expirationPreview.dataset.label || '') + ' ' + formatIsoDate(expirationDate);
@@ -116,9 +121,9 @@
             '[name="lotVendorCode"]',
             '[name="lotDateFormat"]',
             '[name="lotIncludeSequence"]',
-            '[name="lotNextSequence"]',
-            '[name="expirationPeriodDays"]'
+            '[name="lotNextSequence"]'
         ];
+        var expirationInput = root.querySelector('[name="expirationPeriodDays"]');
 
         serialInputs.forEach(function (selector) {
             var input = root.querySelector(selector);
@@ -130,8 +135,13 @@
             if (input) input.addEventListener('input', function () { updateLotPreview(root); });
             if (input) input.addEventListener('change', function () { updateLotPreview(root); });
         });
+        if (expirationInput) {
+            expirationInput.addEventListener('input', function () { updateExpirationPreview(root); });
+            expirationInput.addEventListener('change', function () { updateExpirationPreview(root); });
+        }
 
         updateSerialPreview(root);
         updateLotPreview(root);
+        updateExpirationPreview(root);
     };
 })();

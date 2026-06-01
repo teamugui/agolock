@@ -95,6 +95,7 @@ public interface StockMapper {
                                        @Param("shelfExternalId") UUID shelfExternalId,
                                        @Param("boxExternalId") UUID boxExternalId,
                                        @Param("keyword") String keyword,
+                                       @Param("searchType") String searchType,
                                        @Param("sortBy") String sortBy,
                                        @Param("limit") int limit,
                                        @Param("offset") int offset);
@@ -103,7 +104,8 @@ public interface StockMapper {
                            @Param("spaceExternalId") UUID spaceExternalId,
                            @Param("shelfExternalId") UUID shelfExternalId,
                            @Param("boxExternalId") UUID boxExternalId,
-                           @Param("keyword") String keyword);
+                           @Param("keyword") String keyword,
+                           @Param("searchType") String searchType);
 
     Optional<StockDetailDTO> findDetailByExternalId(@Param("externalId") UUID externalId,
                                                     @Param("userId") Long userId);

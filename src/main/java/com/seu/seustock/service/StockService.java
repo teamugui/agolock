@@ -159,10 +159,11 @@ public class StockService {
                                               UUID shelfExternalId,
                                               UUID boxExternalId,
                                               String keyword,
+                                              String searchType,
                                               String sortBy,
                                               String username) {
         return searchDetailsPage(itemExternalId, spaceExternalId, shelfExternalId, boxExternalId,
-                keyword, sortBy, username, 1).content();
+                keyword, searchType, sortBy, username, 1).content();
     }
 
     public PageResult<StockDetailDTO> searchDetailsPage(UUID itemExternalId,
@@ -170,16 +171,18 @@ public class StockService {
                                                         UUID shelfExternalId,
                                                         UUID boxExternalId,
                                                         String keyword,
+                                                        String searchType,
                                                         String sortBy,
                                                         String username,
                                                         Integer page) {
         UserDTO user = getUser(username);
         String effectiveKeyword = normalizeKeyword(keyword);
+        String effectiveSearchType = normalizeSearchType(searchType);
         int totalCount = stockMapper.countSearchDetails(user.getId(), itemExternalId, spaceExternalId,
-                shelfExternalId, boxExternalId, effectiveKeyword);
+                shelfExternalId, boxExternalId, effectiveKeyword, effectiveSearchType);
         PageRequest pageRequest = PageRequest.of(page, totalCount);
         List<StockDetailDTO> stocks = stockMapper.searchDetails(user.getId(), itemExternalId, spaceExternalId,
-                shelfExternalId, boxExternalId, effectiveKeyword, normalizeSort(sortBy),
+                shelfExternalId, boxExternalId, effectiveKeyword, effectiveSearchType, normalizeSort(sortBy),
                 pageRequest.size(), pageRequest.offset());
         return new PageResult<>(stocks, pageRequest.page(), pageRequest.size(), totalCount);
     }
@@ -738,6 +741,16 @@ public class StockService {
 
     private String normalizeKeyword(String keyword) {
         return keyword == null || keyword.isBlank() ? null : keyword.trim();
+    }
+
+    private String normalizeSearchType(String searchType) {
+        if (searchType == null || searchType.isBlank()) {
+            return "all";
+        }
+        return switch (searchType) {
+            case "item", "serial", "lot", "memo" -> searchType;
+            default -> "all";
+        };
     }
 
     private String normalizeSort(String sortBy) {
