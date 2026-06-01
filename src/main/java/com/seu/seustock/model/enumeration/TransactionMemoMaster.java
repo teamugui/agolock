@@ -2,6 +2,7 @@ package com.seu.seustock.model.enumeration;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public enum TransactionMemoMaster {
     PURCHASE_IN(TransactionType.IN, "enum.TransactionMemoMaster.PURCHASE_IN"),
@@ -28,6 +29,17 @@ public enum TransactionMemoMaster {
 
     public String getMessageKey() {
         return messageKey;
+    }
+
+    public static Optional<String> messageKeyForStoredValue(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        String trimmed = value.strip();
+        return Arrays.stream(values())
+                .filter(master -> master.name().equals(trimmed) || master.messageKey.equals(trimmed))
+                .map(TransactionMemoMaster::getMessageKey)
+                .findFirst();
     }
 
     public static List<String> messageKeysFor(TransactionType transactionType) {

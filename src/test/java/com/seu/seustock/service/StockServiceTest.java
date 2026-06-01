@@ -268,6 +268,16 @@ class StockServiceTest {
     }
 
     @Test
+    void findMemoSuggestions_displaysStoredMasterMemoValuesAsMessages() {
+        when(transactionMapper.findFrequentMemosByUserIdAndType(user.getId(), TransactionType.IN, 4))
+                .thenReturn(List.of("PURCHASE_IN", "enum.TransactionMemoMaster.RETURN_IN"));
+
+        List<String> suggestions = stockService.findMemoSuggestions(TransactionType.IN, USERNAME);
+
+        assertThat(suggestions).containsExactly("구매 입고", "반품 입고", "재고 발견", "수량 보정");
+    }
+
+    @Test
     void findMemoSuggestions_fallsBackToMasterMemosWhenUserHasNoHistory() {
         when(transactionMapper.findFrequentMemosByUserIdAndType(user.getId(), TransactionType.IN, 4))
                 .thenReturn(List.of());

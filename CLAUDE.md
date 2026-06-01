@@ -31,7 +31,7 @@ Spring Boot 4.0.6 / Java 25 / Gradle (Kotlin DSL) web app for personal inventory
 
 **Request flow:** HTTP → `@Controller` → `Service` → MyBatis `Mapper` interface → XML mapper → PostgreSQL
 
-**Rendering strategy:** Thymeleaf SSR for all pages. HTMX is used only for targeted partial updates: modal open/close, inline row editing, delete confirmation, and cancel actions. Full-page navigations use plain `<a>` links and form submits. UI text is in Korean.
+**Rendering strategy:** Thymeleaf SSR for all pages. HTMX is used only for targeted partial updates: modal open/close, inline row editing, delete confirmation, and cancel actions. Full-page navigations use plain `<a>` links and form submits. All UI text is internationalized via `messages*.properties` (Korean is the default locale) — see **Internationalization** below.
 
 ## Package layout
 
@@ -39,18 +39,20 @@ Spring Boot 4.0.6 / Java 25 / Gradle (Kotlin DSL) web app for personal inventory
 com.seu.seustock
 ├── configuration/   UUIDTypeHandler, WebMvcConfig, AppConfig, MinioConfig, SecurityConfig,
 │                    GlobalExceptionHandler, GlobalModelAttributes, HtmxResponse
-├── controller/      @Controller classes returning Thymeleaf view names
+├── controller/      @Controller classes returning Thymeleaf view names (ControllerLogSupport
+│                    is a package-private helper for logging invalid form fields)
 ├── mapper/          @Mapper interfaces (MyBatis)
 ├── model/
 │   ├── dto/         Query result objects (Lombok @Getter/@Setter/@ToString)
-│   ├── enumeration/ StockStatus, TransactionType, TransactionMemoMaster
+│   ├── enumeration/ StockStatus, TransactionType, TransactionMemoMaster, TrackingMode
 │   ├── form/        Input form objects (Bean Validation annotations)
 │   └── pagination/  PageRequest, PageResult<T>
 └── service/
     ├── ai/          ImageAnalysisService (interface), GemmaVisionClient, ImageResizeService,
     │                YoloDetectionClient, YoloGemmaImageAnalysisService
     └── (root)       Business logic; ImageStorageService (interface), MinioImageStorageService (@Primary),
-                     LocalImageStorageService, CustomUserDetailsService
+                     LocalImageStorageService, CustomUserDetailsService, ImageFileValidator,
+                     ItemLotService, SerialNumberGenerator, LotNumberGenerator
 ```
 
 ## Key conventions
@@ -65,11 +67,15 @@ com.seu.seustock
 - Templates directly under `templates/<entity>/` (e.g., `spaces/list`, `spaces/detail`) are full-page SSR views.
 - Items use a card layout: `items/fragments/card.html` exposes `view` (read mode) and `edit` (inline edit mode) fragments. New items are created via a modal. Other entities (spaces, shelves, boxes) still use row-based fragments.
 - Stocks use modal-based actions: `/stocks/new` (standard form), `/stocks/quick` (create item + stock together via `QuickStockForm` and `StockService.createWithNewItem()`), `/stocks/in-form`, `/stocks/out-form`, and an action selection modal. There is no inline row editing for stocks.
+- Per-unit status change: the status badge on a stock row is clickable (`GET /stocks/{id}/status` opens `stocks/fragments/status-modal`, `PUT /stocks/{id}/status` applies it). `StockService.changeStatus()` only mutates a unit currently `IN_STOCK` (guarded by `StockMapper.updateStatusAndMemoIfInStock`), appends an optional reason memo, and writes a matching `stock_transactions` ledger row.
+- Item-lot detail: `GET /lots/{externalId}` returns `lots/fragments/detail-modal` via `ItemLotService.findDetail()` (lot metadata + the list of unit stocks belonging to that lot).
 
 **Enums**
-- `StockStatus`: `IN_STOCK`, `DISPATCHED`, `LOST`, `DAMAGED`, `DISPOSED` — each carries a Korean `label` field.
-- `TransactionType`: `IN`, `OUT`, `MOVE`, `ADJUST` — each carries a Korean `label` field.
+- `StockStatus`: `IN_STOCK`, `DISPATCHED`, `LOST`, `DAMAGED`, `DISPOSED`.
+- `TransactionType`: `IN`, `OUT`, `MOVE`, `ADJUST`.
+- `TrackingMode`: `NONE`, `AUTO`, `MANUAL` — used for both serial-number and lot-number tracking config on items.
 - `TransactionMemoMaster`: predefined memo strings keyed by `TransactionType` (e.g., `PURCHASE_IN → "구매 입고"`). `memosFor(type)` returns the list. Memo suggestions blend user-frequent memos with these defaults via `Stream.concat().distinct().limit(...)`.
+- `StockStatus`/`TransactionType` carry a Korean `label` field, but **templates render the localized label via message keys `enum.<EnumName>.<CONSTANT>`** (e.g., `#{enum.StockStatus.IN_STOCK}`), not the Java `label`. Add a key for every locale when introducing a new constant.
 - MyBatis maps these via the default `EnumTypeHandler` (stores the enum name as a string). Always use enum constants; never pass raw strings to mapper parameters or compare against them.
 
 **Stock location validation**
@@ -143,9 +149,17 @@ com.seu.seustock
   - `GET /qr/boxes/{externalId}` and `GET /qr/shelves/{externalId}` — scan-redirect endpoints that resolve the entity, verify ownership, and redirect to the correct stocks view. Unauthenticated scans are redirected to `/login?redirect=...`.
 - `app.qr-base-url` (defaults to `${app.base-url}`) controls the hostname embedded in generated QR codes.
 
+**Internationalization (i18n)**
+- All user-facing text lives in `messages.properties` (Korean, the default/base bundle) plus `messages_en`, `messages_ja`, `messages_zh_CN`, and `messages_mn`. `spring.messages.basename=messages` and `fallback-to-system-locale=false`. **When adding any UI string, add the key to all five files.**
+- Locale is selected by `CookieLocaleResolver` (cookie `lang`, default `Locale.KOREAN`, 30-day max age) and switched on the fly by `LocaleChangeInterceptor` via a `?lang=` request param (both wired in `WebMvcConfig`).
+- Templates resolve text with `#{key}`; enum labels use `#{enum.<EnumName>.<CONSTANT>}` (see **Enums**). Bean-validation messages resolve through the `MessageSource` (`AppConfig.getValidator`).
+- **Services and `GlobalExceptionHandler` localize at runtime via injected `MessageSource` + `LocaleContextHolder.getLocale()`** — exception messages and toasts are message keys, not hard-coded strings. Mirror this when adding service-layer messages (e.g., `error.user.notFound`, `error.lot.notFound`).
+
 ## Database schema
 
-Source of truth: `src/main/resources/db/migration/` 의 버전 파일들. Flyway가 앱 시작 시 PostgreSQL에 마이그레이션을 적용한다. 스키마 변경 시 `VN__description.sql` 파일을 새로 추가한다 (예: `V2__add_tags.sql`). `docker/postgres/init/init.sql`은 더 이상 사용되지 않는다.
+Source of truth: `src/main/resources/db/migration/` 의 버전 파일들 (현재 `V1`~`V6`). Flyway가 앱 시작 시 PostgreSQL에 마이그레이션을 적용한다. 스키마 변경 시 `VN__description.sql` 파일을 새로 추가한다 (예: `V2__add_tags.sql`). `docker/postgres/init/init.sql`은 더 이상 사용되지 않는다.
+
+**스키마를 변경하면 반드시 `src/test/resources/schema-test.sql`(H2 DDL)도 함께 갱신하고 관련 매퍼 테스트를 수정한다.** Flyway 마이그레이션은 테스트에서 실행되지 않으므로 (H2는 `schema-test.sql`을 `@Sql`로 직접 로드한다) 둘이 어긋나면 매퍼 테스트가 깨진다.
 
 Domain hierarchy (physical storage):
 ```
@@ -153,11 +167,16 @@ users → spaces → shelves → boxes
 ```
 
 Inventory model:
-- `items`: master catalog of item definitions (name, description — no location or quantity)
-- `stocks`: each row is **one physical unit** of an item at a location (`space_id` required; `shelf_id` and `box_id` optional). Tracks `serial_number`, `lot_number`, `expiration_date`, and `status` (`StockStatus` enum). There is no quantity column — count is derived by counting rows.
+- `items`: master catalog of item definitions (name, description — no location or quantity). Also holds an optional base `price`, an optional `expiration_period_days`, and the serial/lot **tracking config** columns (`serial_mode`/`lot_mode` = `TrackingMode`, plus `serial_prefix`/`serial_padding_length`/`serial_increment_unit`/`serial_next_sequence` and `lot_vendor_code`/`lot_date_format`/`lot_include_sequence`/`lot_sequence_key`/`lot_next_sequence`). These were collapsed from separate policy tables directly onto `items` in V6.
+- `stocks`: each row is **one physical unit** of an item at a location (`space_id` required; `shelf_id` and `box_id` optional). Tracks `serial_number`, `lot_number`, `lot_id` (FK → `item_lots`), `expiration_date`, `price`, `is_kept`, and `status` (`StockStatus` enum). There is no quantity column — count is derived by counting rows.
+- `item_lots`: a named lot/batch of an item (`lot_number` unique per item, optional `expiration_date`); `stocks.lot_id` references it. Lot numbers are produced by `LotNumberGenerator`, serial numbers by `SerialNumberGenerator`, driven by the item's tracking config.
 - `stock_transactions`: append-only ledger; every status change on a stock unit writes a row with `transaction_type` (`TransactionType` enum). Any service method that inserts or mutates a `stocks` row must also insert a corresponding `stock_transactions` row in the same `@Transactional` method.
 - `images`: one row per uploaded file; deduplicated by `(user_id, content_hash)`.
 - `item_images` / `stock_images`: junction tables linking images to items or stocks.
+
+**Pricing semantics:** `stocks.price` is a **snapshot** copied from `items.price` at stock creation; editing an item's price is not retroactive (existing units keep their snapshot, and a unit's price can be edited individually). All prices are KRW integers (`NUMERIC(12,0)`, no decimals).
+
+**Stock-keep:** `is_kept` marks a unit as reserved/held. The partial index `idx_stocks_available` (`status = 'IN_STOCK' AND is_kept = FALSE`) backs "available stock" queries.
 
 If `box_id` is set, `shelf_id` must also be set. The schema enforces this with `chk_box_requires_shelf`.
 

@@ -102,12 +102,14 @@ public class StockController {
                             Model model,
                             HttpServletResponse response) {
         String username = principal.getName();
+        var stock = stockService.findDetailByExternalId(stockExternalId, username);
         if (result.hasErrors()) {
             log.warn("request validation failed operation=stock.update stockExternalId={} errorCount={} fields={}",
                     stockExternalId, result.getErrorCount(), ControllerLogSupport.invalidFields(result));
-            model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
+            model.addAttribute("stock", stock);
             return "stocks/fragments/detail-row :: edit";
         }
+        form.setMemo(stock.getMemo());
         model.addAttribute("stock", stockService.updateDetails(stockExternalId, form, username));
         HtmxResponse.success(response, getMsg("toast.stock.updated"));
         return "stocks/fragments/detail-row :: view";
@@ -188,6 +190,7 @@ public class StockController {
         form.setSerialNumber(stock.getSerialNumber());
         form.setLotNumber(stock.getLotNumber());
         form.setExpirationDate(stock.getExpirationDate());
+        form.setPrice(stock.getPrice());
         form.setMemo(memo);
 
         var updated = stockService.updateDetails(stockExternalId, form, username);

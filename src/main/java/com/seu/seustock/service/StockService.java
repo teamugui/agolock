@@ -193,7 +193,10 @@ public class StockService {
     public List<String> findMemoSuggestions(TransactionType transactionType, String username) {
         UserDTO user = getUser(username);
         List<String> frequentMemos = transactionMapper.findFrequentMemosByUserIdAndType(
-                user.getId(), transactionType, MEMO_SUGGESTION_LIMIT);
+                        user.getId(), transactionType, MEMO_SUGGESTION_LIMIT)
+                .stream()
+                .map(this::displayMemo)
+                .toList();
         List<String> masterMemos = TransactionMemoMaster.messageKeysFor(transactionType).stream()
                 .map(this::getMsg)
                 .toList();
@@ -201,6 +204,12 @@ public class StockService {
                 .distinct()
                 .limit(MEMO_SUGGESTION_LIMIT)
                 .toList();
+    }
+
+    private String displayMemo(String memo) {
+        return TransactionMemoMaster.messageKeyForStoredValue(memo)
+                .map(this::getMsg)
+                .orElse(memo);
     }
 
     @Transactional
